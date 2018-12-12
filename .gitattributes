@@ -1,0 +1,3 @@
+* text=auto
+*.cpp text diff=cpp
+*.cpp crlf diff
