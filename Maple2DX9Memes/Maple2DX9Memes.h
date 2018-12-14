@@ -10,6 +10,8 @@ static struct configInfo {
 	float viewYaw = 45.f;
 	bool pitchCheck = false;
 	float viewPitch = -40.89387131f;
+
+	bool debugMode = false;
 } hack_config;
 
 int hookCamera(bool state);

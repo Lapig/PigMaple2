@@ -24,17 +24,15 @@ __forceinline void draw_menu(bool *status)
 	ImGui::Checkbox("Portal Chams", &hack_config.portalChams);
 	ImGui::Checkbox("Wireframe", &hack_config.wireFrame);
 
-	/*if (ImGui::Button("Refresh Camera Hook"))
-	{
-		hookCamera(true);
-	}*/
+	ImGui::Spacing();
+	ImGui::Checkbox("Debug Info", &hack_config.debugMode);
+
 	ImGui::Separator();
 	ImGui::Spacing();
 
 //	ImGui::DragInt("drag zoom", &hack_config.zoomCap, 100, 1100, 11000);
 //	ImGui::SliderScalar("Zoom", ImGuiDataType_S32, &hack_config.zoomCap, (const void*)1100, (const void*)11000);
 	ImGui::SliderInt("Zoom", &hack_config.zoomCap, 1100, 11000);
-	ImGui::Separator();
 	ImGui::Spacing();
 
 	ImGui::Checkbox("Yaw Ctrl", &hack_config.yawCheck);
@@ -44,7 +42,9 @@ __forceinline void draw_menu(bool *status)
 	ImGui::Checkbox("Roll Ctrl", &hack_config.rollCheck);
 	ImGui::SliderFloat("Roll", &hack_config.viewRoll, 0, 180);
 
-
+	ImGui::Separator();
+	ImGui::Spacing();
+	ImGui::TextColored(ImVec4(.95f,.388f,.03f,0.95f),"    Lapig & www.gamekiller.net");
 
 	ImGui::End();
 
