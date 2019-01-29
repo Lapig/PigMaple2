@@ -57,7 +57,7 @@ BOOL Asm::BytetoChar(BYTE Packet[], int Size, char StrPacket[]){
  
  
 void Asm::ErrorMessage(const char message[]){
-   MessageBoxA(NULL, message, "Asm::ErrorMessage", NULL);
+   MessageBoxA(NULL, message, "PigError", NULL);
 }
  
  

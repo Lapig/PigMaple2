@@ -29,9 +29,10 @@ void menu_init(void *game_hwnd, LPDIRECT3DDEVICE9 Device)
 	ImGui::CreateContext();
 	ImGui_ImplWin32_Init(game_hwnd);
 	ImGui_ImplDX9_Init(Device);
-	//ImGui::StyleColorsDark();
 	ImGuiIO &io = ImGui::GetIO();
 	io.Fonts->AddFontDefault();
+	io.IniFilename = NULL;
+	//io.DisplaySize = ImVec2(vp.Height, vp.Width);
 	hwnd = game_hwnd;
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.Alpha = 1.0;
@@ -62,7 +63,7 @@ void menu_init(void *game_hwnd, LPDIRECT3DDEVICE9 Device)
 	colors[ImGuiCol_TitleBg] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
 	colors[ImGuiCol_TitleBgActive] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
 	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-	colors[ImGuiCol_MenuBarBg] = ImVec4(0.12f, 0.12f, 0.12f, 1.00f);
+	colors[ImGuiCol_MenuBarBg] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
 	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
 	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
 	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
@@ -88,6 +89,10 @@ void menu_init(void *game_hwnd, LPDIRECT3DDEVICE9 Device)
 	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.87f, 0.55f, 0.08f, 1.00f);
 	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.47f, 0.60f, 0.76f, 0.47f);
 
-	ImGui::SetNextWindowPosCenter();
-//	ImGui::SetNext
+	colors[ImGuiCol_COUNT] = ImVec4(0.26f, 0.26f, 0.26f, 0.63f);
+
+#ifdef DEV
+	teleTargets.push_back("2.648437,-2.695625,2.766172");
+	teleTargets.push_back("-2.084667,-3.101826,2.641719");
+#endif
 }

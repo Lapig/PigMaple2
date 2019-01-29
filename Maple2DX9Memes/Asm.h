@@ -26,7 +26,7 @@ namespace Asm{
    int ChartoAob(const char Array[], BYTE b[], BOOL m[]);
    DWORD AobScan(const char Array[], DWORD Memory_Start = 0x00401000, DWORD Memory_End = 0x04000000);
    byte* FindPattern(char* pbMask, const char* pszMask, size_t nLength, byte* pBaseAddress = (BYTE*)(0x00401000));
-
+   void ErrorMessage(const char message[]);
 }
  
 #endif

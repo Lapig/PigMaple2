@@ -134,7 +134,7 @@ static void ImGui_ImplWin32_UpdateMousePos()
     io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
     POINT pos;
 
-    if (/*::GetForegroundWindow() == g_hWnd &&*/ ::GetCursorPos(&pos))
+    if (::GetForegroundWindow() == g_hWnd && ::GetCursorPos(&pos))
         if (::ScreenToClient(g_hWnd, &pos))
             io.MousePos = ImVec2((float)pos.x, (float)pos.y);
 }
@@ -223,14 +223,16 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
     }
     case WM_MOUSEWHEEL:
         io.MouseWheel += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
-        return 0;
+        return 1;
     case WM_MOUSEHWHEEL:
         io.MouseWheelH += (float)GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA;
-        return 0;
+        return 1;
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
         if (wParam < 256)
             io.KeysDown[wParam] = 1;
+		if (wParam == 0x9)
+			return 2;
         return 1;
     case WM_KEYUP:
     case WM_SYSKEYUP:
