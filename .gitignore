@@ -22,7 +22,8 @@ bld/
 [Bb]in/
 [Oo]bj/
 Deploy/
-
+GMS/
+KMS/
 # Visual Studo 2015 cache/options directory
 .vs/
 

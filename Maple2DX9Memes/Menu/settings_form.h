@@ -25,7 +25,7 @@ static bool packetWindow = false;
 static std::string selectedPacket = "";
 static void showRecvPackets(bool* p_open)
 {
-	ImGui::SetNextWindowSize(ImVec2(600, 600), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(600, 800), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Packets", p_open))
 	{
 		ImGui::End();
@@ -36,6 +36,9 @@ static void showRecvPackets(bool* p_open)
 	static int test_type = 0;
 	static ImGuiTextBuffer log;
 	static int lines = 0;
+
+	ImGui::BeginChild("Filter", ImVec2(585, 80), true, ImGuiWindowFlags_NoScrollbar);
+	ImGui::BeginGroup();
 	ImGui::Text("Received Packets");
 	
 	static bool recv=false, send = false, scroll=true;
@@ -48,15 +51,10 @@ static void showRecvPackets(bool* p_open)
 	{
 		ImGui::BeginChild("RecvLog");
 
-		for (auto m = recvPackets.begin(); m != recvPackets.end(); ++m) {
-			if (ImGui::Selectable((*m).c_str(), (*m) == selectedPacket)) {
-				selectedPacket = *m;
-			}
-			//m = recvPackets.erase(m);
-
-			/*log.appendf((*m).c_str());
+		for (auto m = recvPackets.begin(); m != recvPackets.end();) {
+			log.appendf((*m).c_str());
 			m = recvPackets.erase(m);
-			log.appendf("\n");*/
+			log.appendf("\n");
 		}
 		ImGui::EndChild();
 
@@ -77,18 +75,25 @@ static void showRecvPackets(bool* p_open)
 	}
 	ImGui::SameLine();
 	ImGui::Checkbox("Auto-scroll", &scroll);
+	ImGui::EndGroup();
 
-	ImGui::BeginChild("Log");
+	//ImGui::BeginGroup();
+//	ImGui::Columns(2);
+	ImGui::EndChild();
+//	ImGui::EndGroup();
+
+	ImGui::BeginGroup();
+	ImGui::BeginChild("Log", ImVec2(585,680), false);
 	if (recv) {
-		for (auto m = recvPackets.begin(); m != recvPackets.end();++m) {
-			if (ImGui::Selectable((*m).c_str(), (*m) == selectedPacket)) {
+		for (auto m = recvPackets.begin(); m != recvPackets.end();) {
+			/*if (ImGui::Selectable((*m).c_str(), (*m) == selectedPacket)) {
 				selectedPacket = *m;
-			}
+			}*/
 			//m = recvPackets.erase(m);
 
-			/*log.appendf((*m).c_str());
+			log.appendf((*m).c_str());
 			m = recvPackets.erase(m);
-			log.appendf("\n");*/
+			log.appendf("\n");
 		}
 	}
 	if (send) {
@@ -98,19 +103,12 @@ static void showRecvPackets(bool* p_open)
 			log.appendf("\n");
 		}
 	}
-	if (scroll)
+	// Single call to TextUnformatted() with a big buffer
+	ImGui::TextUnformatted(log.begin(), log.end());
+	if(scroll)
 		ImGui::SetScrollHere(1.0f);
-/*	switch (test_type)
-	{
-	case 0:
-		// Single call to TextUnformatted() with a big buffer
-		ImGui::TextUnformatted(log.begin(), log.end());
-		if(scroll)
-			ImGui::SetScrollHere(1.0f);
-		break;
-	
-	}*/
 	ImGui::EndChild();
+	ImGui::EndGroup();
 	ImGui::End();
 }
 
