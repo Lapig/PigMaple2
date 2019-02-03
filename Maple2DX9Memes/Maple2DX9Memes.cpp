@@ -82,7 +82,7 @@ IDirect3DPixelShader9 *shaderPrev=NULL;
 char ShaderRed[] = "ps_2_0 def c0, 1.0, 0.0, 0.0, 0.8 mov oC0, c0 mov oDepth, c0.b";
 char ShaderGreen[] = "ps_2_0 def c0, 0.0, 1.0, 0.0, 1.0 mov oC0, c0 mov oDepth, c0.b";
 ID3DXBuffer *ShaderBufferColor = NULL;
-ID3DXBuffer *ShaderBufferWeapon = NULL;
+ID3DXBuffer *ShaderBufferChest = NULL;
 
 WNDPROC game_wndprc;
 HWND game_hwnd;
@@ -112,7 +112,7 @@ static DWORD packetSend = 0x0;
 static DWORD nxCharacter = 0x0;
 
 
-std::vector<unsigned int> cameraptroffsets = { 0x124,0x88 };
+std::vector<unsigned int> cameraptroffsets = { 0x120,0x88 };
 std::vector<unsigned int> playerbaseoffsets = { 0x1B4,0x390 };
 std::vector<unsigned int> deltaspeedoffsets = { 0x1B4,0x120 };
 std::vector<unsigned int> jumpheightoffsets = { 0x1B4,0x440 };
@@ -229,7 +229,7 @@ void registerMove() {
 	DWORD playerAnimationPtr = readPointerOffset(playerPtrBase, playeranimationoffsets);
 
 	if (statePtr && prevStatePtr && playerAnimationPtr) {
-		*(BYTE*)(statePtr) = 6;
+		*(BYTE*)(statePtr) = 6;				//jumping, 3 = crawling
 		*(BYTE*)(prevStatePtr) = 1;
 		//*(BYTE*)(playerAnimationPtr) = 157;	//balloon mount
 	}
@@ -239,7 +239,7 @@ void teleport(float  cords[], bool target)
 	DWORD posbase = readPointerOffset(playerPtrBase, posbaseoffsets);
 	DWORD riseDuration = readPointerOffset(playerPtrBase, risingtimeoffsets);
 	if (riseDuration && target) {
-		registerMove();
+	//	registerMove();
 		*(float*)(riseDuration) = 33333;
 	}
 	if (posbase && (posbase + 0x8) && (posbase + 0x10)) {
@@ -283,7 +283,7 @@ float* getpos()
 	return cords;
 }
 
-bool fieldLoaded() {
+/*bool fieldLoaded() {
 	
 	BYTE testLoadByte = *(BYTE*)(fieldLoadPtr+3);
 	BYTE bytes[9];
@@ -298,15 +298,15 @@ bool fieldLoaded() {
 	if (testLoadByte==100)
 		return true;
 	return false;
-}
-static bool fogReadyToClear = true;
+}*/
+/*static bool fogReadyToClear = true;
 void clearFog()
 {
 	fogReadyToClear = false;
 //	Sleep(125);
 	fogReadyToClear = true;
 }
-
+*/
 bool validPlayerPtr() {
 	DWORD ptr = readDWORD(playerPtrBase, 0x1b4);
 	if (ptr == NULL || ptr == 0)
@@ -423,13 +423,13 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		Device->CreatePixelShader((const DWORD*)ShaderBufferColor->GetBufferPointer(), &sGreen);
 		ShaderBufferColor->Release();
 
-		D3DXAssembleShader(ShaderRed, sizeof(ShaderRed), NULL, NULL, 0, &ShaderBufferWeapon, NULL);
-		Device->CreatePixelShader((const DWORD*)ShaderBufferWeapon->GetBufferPointer(), &sRed);
-		ShaderBufferWeapon->Release();
-
+		D3DXAssembleShader(ShaderRed, sizeof(ShaderRed), NULL, NULL, 0, &ShaderBufferChest, NULL);
+		Device->CreatePixelShader((const DWORD*)ShaderBufferChest->GetBufferPointer(), &sRed);
+		ShaderBufferChest->Release();
 	//	fieldLoadPtr = AobScan("5a 96 ?? ?? 5a 96 90 01");
 
 //Currently useless but neat
+/*
 #ifndef TEST_ENV
 		dwCrcStart = reinterpret_cast<unsigned int>(GetModuleHandleA("MapleStory2.exe"));
 
@@ -445,7 +445,7 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 			Asm::ErrorMessage("CRC Error");
 		}
 #endif
-
+*/
 		FirstInit = TRUE;
 	}
 
@@ -467,9 +467,9 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		if (StreamData != NULL)
 			StreamData->Release();
 	}
-
+/*
 	//get vSize
-/*	hRet = Device->GetVertexShader(&vShader);
+	HRESULT hRet = Device->GetVertexShader(&vShader);
 	if (SUCCEEDED(hRet) && vShader != NULL)
 	{
 		hRet = vShader->GetFunction(NULL, &vSize);
@@ -489,6 +489,50 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 //	Device->GetRenderState(D3DRS_ZENABLE, &zEnable);
 
 	if (hack_config.portalChams && (NumVertices == 144 && primCount == 280)) {	//portals
+/*		float pointSize = 10.0f;
+		Device->SetRenderState(D3DRS_POINTSIZE, *(DWORD*)& pointSize);
+		HRESULT hRet = Device->GetVertexShader(&vShader);
+		if (SUCCEEDED(hRet) && vShader != NULL)
+		{
+			hRet = vShader->GetFunction(NULL, &vSize);
+			if (SUCCEEDED(hRet) && vShader != NULL)
+			{
+				vShader->Release();
+				vShader = NULL;
+			}
+		}
+		Device->SetPixelShader(NULL);
+		struct UntransformedColouredVertex {
+			float x, y, z;
+			DWORD colour;
+			const DWORD FORMAT = D3DFVF_XYZ | D3DFVF_DIFFUSE;
+			const int STRIDE_SIZE = 16;
+		};
+		UntransformedColouredVertex vertices[] = {
+			{ 0.0f, 1.2f, 0.0f, 0xffff0000 },
+			{ 1.2f, 0.6f, 0.0f, 0xff00ff00 },
+			{ 1.2f, -0.6f, 0.0f, 0xff0000ff },
+			{ 0.0f, -1.2f, 0.0f, 0xffffff },
+			{ -1.2f, -0.6f, 0.0f, 0xffffff00 },
+			{ -1.2f, 0.6f, 0.0f, 0xff00ffff }
+		};
+		IDirect3DVertexBuffer9* vertexBuffer = NULL;
+
+		HRESULT result = Device->CreateVertexBuffer(sizeof(vertices), D3DUSAGE_WRITEONLY, vertices[0].FORMAT, D3DPOOL_DEFAULT, &vertexBuffer, NULL);
+
+		void* bufferMemory;
+		result = vertexBuffer->Lock(0, sizeof(vertices), &bufferMemory, NULL);
+		memcpy(bufferMemory, vertices, sizeof(vertices));
+
+		vertexBuffer->Unlock();
+		Device->SetFVF(vertices[0].FORMAT);
+		Device->SetStreamSource(0, vertexBuffer, 0, vertices[0].STRIDE_SIZE);
+		Device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
+		if (vertexBuffer != NULL) {
+			vertexBuffer->Release();
+			vertexBuffer = NULL;
+		}
+		return D3D_OK;*/
 		Device->SetPixelShader(sGreen);
 	}
 	else if (hack_config.chestChams && ((NumVertices == 291 && primCount == 424) || (NumVertices == 125 && primCount == 188)) )
@@ -757,6 +801,11 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 						*(float*)(wallwalkPtr) = player_hacks.wallWalkHeight;
 					}
 				}
+
+				if (teleQueue.size() > 0) {
+					teleport(teleQueue.back(), true);
+					teleQueue.pop_back();
+				}
 			}///endif player
 
 //////debug misc
@@ -854,9 +903,13 @@ void __stdcall sendPacketCallback(DWORD _ecx, DWORD _retn) {
 	std::string sHeader = GetClientHeader(wHeader);
 	char msg[124];
 	sprintf_s(msg, 124, "SEND [%04X] %p - %i - %s - %p", wHeader, _retn, nSize, sHeader.c_str(), _ecx);
-	if(wHeader!=0x200)
+	if (wHeader != 0x200) {
+		if (sentPackets.size() > 0) {
+			if (strncmp(sentPackets.back().c_str(), msg, 12) == 0)
+				return;
+		}
 		sentPackets.push_back(std::string(msg));
-	//MessageBoxA(0, msg, msg, 0);
+	}
 }
 void __stdcall recvPacketCallback(DWORD _ecx) {
 	DWORD nPad = Read<DWORD>(_ecx + 0x30);
@@ -870,7 +923,13 @@ void __stdcall recvPacketCallback(DWORD _ecx) {
 	std::string sHeader = GetServerHeader(wHeader);
 	char msg[124];
 	sprintf_s(msg, 124, "RECV [%04X] - %i - %s - %p", wHeader, nSize, sHeader.c_str(), _ecx);
-	recvPackets.push_back(std::string(msg));
+	if (wHeader != 0x54 && wHeader!=0x17) {
+		if (recvPackets.size() > 0) {
+			if (strncmp(recvPackets.back().c_str(), msg, 12) == 0)
+				return;
+		}
+		recvPackets.push_back(std::string(msg));
+	}
 }
 #define ASM_RET(var,offset) _asm push dword ptr ds:[var] \
     _asm add dword ptr ds:[esp],offset \
@@ -885,7 +944,7 @@ void __declspec(naked) SendPacketHook() {
 		popad
 
 		mov eax, ecx
-		mov ecx, dword ptr ds : [0x01A78A00]
+		mov ecx, dword ptr ds : [0x01AA7C88]
 		ASM_RET(packetSend, 8)
 	}
 }
@@ -981,8 +1040,8 @@ DWORD WINAPI HookThread(LPVOID)
 #ifndef TEST_ENV
 	DWORD addyCameraPtr = AobScan(AY_OBFUSCATE("E8 ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 ?? 5F"));
 	addyPlayerBasePtr = AobScan(AY_OBFUSCATE("A1 ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? 83 ?? ?? 85 ?? 74 ?? 8B ?? ?? F3 ?? ?? ?? ?? 89"));
-	loadingPtrBase = AobScan(AY_OBFUSCATE("B9 ?? ?? ?? ?? C7 ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? 8B ?? ?? C7"));
-	if (!addyCameraPtr || !addyPlayerBasePtr || !loadingPtrBase || !game_hwnd) {
+//	loadingPtrBase = AobScan(AY_OBFUSCATE("B9 ?? ?? ?? ?? C7 ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? 8B ?? ?? C7"));
+	if (!addyCameraPtr || !addyPlayerBasePtr || !game_hwnd) {
 		Asm::ErrorMessage("Initilization Error");
 		return 1;
 	}
@@ -1041,7 +1100,7 @@ DWORD WINAPI HookThread(LPVOID)
 
 //	packetRecv = AobScan(AY_OBFUSCATE("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2"));
 //	packetRecv += 19;
-	packetRecv = 0x005BEB36;
+	packetRecv = 0x005C3476;
 	packetSend = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));
 //	packetSend = 0x5BED10;
 

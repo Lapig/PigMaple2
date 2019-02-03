@@ -92,7 +92,7 @@ void menu_init(void *game_hwnd, LPDIRECT3DDEVICE9 Device)
 	colors[ImGuiCol_COUNT] = ImVec4(0.26f, 0.26f, 0.26f, 0.63f);
 
 #ifdef DEV
-	teleTargets.push_back("2.648437,-2.695625,2.766172");
-	teleTargets.push_back("-2.084667,-3.101826,2.641719");
+//	teleTargets.push_back("2.648437,-2.695625,2.766172");
+//	teleTargets.push_back("-2.084667,-3.101826,2.641719");
 #endif
 }

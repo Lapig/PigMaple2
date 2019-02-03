@@ -5,14 +5,14 @@
 #include "flags.h"
 uintptr_t readPointerOffset(uintptr_t ptr, std::vector<unsigned int> offsets)
 {
-#ifdef KMS
+//#ifdef KMS
 	if (offsets.size() > 0) {
 		if (offsets[0] == 0x1B4)
 			offsets[0] = 0x1B0;
 		else if (offsets[0] == 0x124)
 			offsets[0] = 0x128;
 	}
-#endif
+//#endif
 	uintptr_t addr = ptr;
 	if (addr == 0)
 		return 0;

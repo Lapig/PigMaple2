@@ -26,7 +26,7 @@ static std::string selectedPacket = "";
 static void showRecvPackets(bool* p_open)
 {
 	ImGui::SetNextWindowSize(ImVec2(600, 800), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Packets", p_open))
+	if (!ImGui::Begin("Packets", p_open, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar))
 	{
 		ImGui::End();
 		return;
@@ -37,13 +37,13 @@ static void showRecvPackets(bool* p_open)
 	static ImGuiTextBuffer log;
 	static int lines = 0;
 
-	ImGui::BeginChild("Filter", ImVec2(585, 80), true, ImGuiWindowFlags_NoScrollbar);
+	ImGui::BeginChild("Filter", ImVec2(570, 70), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 	ImGui::BeginGroup();
 	ImGui::Text("Received Packets");
 	
 	static bool recv=false, send = false, scroll=true;
 
-	if (ImGui::Button("Clear")) { log.clear(); lines = 0; sentPackets.clear(); }
+	if (ImGui::Button("Clear")) { log.clear(); lines = 0; sentPackets.clear(); recvPackets.clear(); }
 	ImGui::SameLine();
 	ImGui::Checkbox("##recv", &recv);
 	ImGui::SameLine();
@@ -83,7 +83,7 @@ static void showRecvPackets(bool* p_open)
 //	ImGui::EndGroup();
 
 	ImGui::BeginGroup();
-	ImGui::BeginChild("Log", ImVec2(585,680), false);
+	ImGui::BeginChild("Log", ImVec2(570,660), false);
 	if (recv) {
 		for (auto m = recvPackets.begin(); m != recvPackets.end();) {
 			/*if (ImGui::Selectable((*m).c_str(), (*m) == selectedPacket)) {
@@ -385,7 +385,8 @@ __forceinline void draw_menu(bool *status, DWORD player)
 			x_ = cords[0];
 			y_ = cords[1];
 			z_ = cords[2];
-			teleport(cords);
+			teleQueue.push_back(cords);
+			//teleport(cords);
 		}
 		ImGui::SameLine();
 		ImGui::Text(std::to_string(currselect).c_str());

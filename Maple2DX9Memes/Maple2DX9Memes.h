@@ -4,7 +4,7 @@
 #include "d3d9.h"
 #include <unordered_map>
 //#define BANABLE
-#define DEV
+//#define DEV
 
 struct renderChange {
 	D3DRENDERSTATETYPE state;
@@ -89,6 +89,8 @@ void key_press(unsigned int key, bool keyup=false);
 static std::vector<renderChange> renders;
 static std::vector<std::string> recvPackets;
 static std::vector<std::string> sentPackets;
+
+static std::vector<float*> teleQueue;
 
 
 static std::unordered_map<DWORD, std::string> tClient;
