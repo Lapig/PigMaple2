@@ -262,9 +262,17 @@ DWORD Asm::AobScan(const char Array[],DWORD Memory_Start , DWORD Memory_End){
    }__except(EXCEPTION_EXECUTE_HANDLER){
      return 0;
    }
- 
- 
- 
    return 0;
 }
  
+void Asm::writeJmpHook(DWORD dwAddy, LPVOID dwHook, UINT nNops) {
+	if (!dwAddy) {
+		return;
+	}
+	DWORD dwOldProtect;
+	VirtualProtect((LPVOID)dwAddy, 5 + nNops, PAGE_EXECUTE_READWRITE, &dwOldProtect);
+	*(BYTE*)dwAddy = (BYTE)0xE9;
+	*(DWORD*)(dwAddy + 1) = (DWORD)(((DWORD)dwHook - (DWORD)dwAddy) - 5);
+	FillMemory((LPVOID)(dwAddy + 5), nNops, 0x90);
+	VirtualProtect((LPVOID)dwAddy, 5 + nNops, dwOldProtect, &dwOldProtect);
+}

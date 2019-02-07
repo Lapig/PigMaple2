@@ -286,7 +286,7 @@ __forceinline void draw_menu(bool *status, DWORD player)
 			ImGui::SetTooltip("Use with location bypass");
 		
 		ImGui::SameLine(pad+25);
-		ImGui::SliderInt("##flooroffset", &player_hacks.floorOffset, -5, 10);
+		ImGui::SliderInt("##flooroffset", &player_hacks.floorOffset, -5, 7);
 		ImGui::Checkbox("Turbo Rise", &player_hacks.turboRise);
 		ImGui::Separator();
 		ImGui::Spacing();
@@ -385,8 +385,8 @@ __forceinline void draw_menu(bool *status, DWORD player)
 			x_ = cords[0];
 			y_ = cords[1];
 			z_ = cords[2];
-			teleQueue.push_back(cords);
-			//teleport(cords);
+			//teleQueue.push_back(cords);
+			teleport(cords);
 		}
 		ImGui::SameLine();
 		ImGui::Text(std::to_string(currselect).c_str());

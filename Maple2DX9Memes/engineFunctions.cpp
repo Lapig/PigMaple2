@@ -1,6 +1,10 @@
 #pragma once
 #include "engineFunctions.h"
 #include "Maple2DX9Memes.h"
+#include "Asm.h"
+#include "obfuscate.h"
+
+using namespace Asm;
 
 double v2;
 int v3;
@@ -46,4 +50,3 @@ DWORD* a2;
 		mov al,1
 	}
 }
-

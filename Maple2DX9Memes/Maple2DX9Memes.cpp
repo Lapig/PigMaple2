@@ -52,6 +52,8 @@ tUpdateTexture oUpdateTexture;
 typedef HRESULT(__stdcall * tRelease)(LPDIRECT3DDEVICE9 Device);
 tRelease oRelease;
 
+bool write_packet_hooks();
+
 //device
 LPDIRECT3DDEVICE9 Device;
 
@@ -229,19 +231,19 @@ void registerMove() {
 	DWORD playerAnimationPtr = readPointerOffset(playerPtrBase, playeranimationoffsets);
 
 	if (statePtr && prevStatePtr && playerAnimationPtr) {
-		*(BYTE*)(statePtr) = 6;				//jumping, 3 = crawling
-		*(BYTE*)(prevStatePtr) = 1;
-		//*(BYTE*)(playerAnimationPtr) = 157;	//balloon mount
+		*(BYTE*)(statePtr) = 30;				//jumping, 3 = crawling
+		*(BYTE*)(prevStatePtr) = 6;
+		*(BYTE*)(playerAnimationPtr) = 157;	//balloon mount
 	}
 }
 void teleport(float  cords[], bool target)
 {
 	DWORD posbase = readPointerOffset(playerPtrBase, posbaseoffsets);
-	DWORD riseDuration = readPointerOffset(playerPtrBase, risingtimeoffsets);
-	if (riseDuration && target) {
+//	DWORD riseDuration = readPointerOffset(playerPtrBase, risingtimeoffsets);
+//	if (riseDuration && target) {
 	//	registerMove();
-		*(float*)(riseDuration) = 33333;
-	}
+	//	*(float*)(riseDuration) = 999;
+//	}
 	if (posbase && (posbase + 0x8) && (posbase + 0x10)) {
 		*(float*)(posbase) = cords[0];
 		*(float*)(posbase+18) = cords[0];
@@ -348,7 +350,13 @@ void key_press(unsigned int key, bool keyup)
 	in[0].ki.dwExtraInfo = NULL;
 
 	SendInput(1, in, sizeof(INPUT));
+	//PostMessage(game_hwnd, WM_KEYDOWN, key, NULL);
+	//PostMessage(game_hwnd, WM_CHAR, key, 1);
+	//PostMessage(game_hwnd, WM_KEYUP, key, NULL);
+
 }
+
+
 #pragma region NullRender
 HRESULT hkPresent(LPDIRECT3DDEVICE9 Device, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)
 {
@@ -429,8 +437,8 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 	//	fieldLoadPtr = AobScan("5a 96 ?? ?? 5a 96 90 01");
 
 //Currently useless but neat
-/*
-#ifndef TEST_ENV
+
+#if defined(TEST_ENV)==0 && defined(DEV)
 		dwCrcStart = reinterpret_cast<unsigned int>(GetModuleHandleA("MapleStory2.exe"));
 
 		if (dwCrcStart != 0) {
@@ -444,8 +452,10 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		else {
 			Asm::ErrorMessage("CRC Error");
 		}
+
+	//	write_packet_hooks();
 #endif
-*/
+
 		FirstInit = TRUE;
 	}
 
@@ -489,50 +499,6 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 //	Device->GetRenderState(D3DRS_ZENABLE, &zEnable);
 
 	if (hack_config.portalChams && (NumVertices == 144 && primCount == 280)) {	//portals
-/*		float pointSize = 10.0f;
-		Device->SetRenderState(D3DRS_POINTSIZE, *(DWORD*)& pointSize);
-		HRESULT hRet = Device->GetVertexShader(&vShader);
-		if (SUCCEEDED(hRet) && vShader != NULL)
-		{
-			hRet = vShader->GetFunction(NULL, &vSize);
-			if (SUCCEEDED(hRet) && vShader != NULL)
-			{
-				vShader->Release();
-				vShader = NULL;
-			}
-		}
-		Device->SetPixelShader(NULL);
-		struct UntransformedColouredVertex {
-			float x, y, z;
-			DWORD colour;
-			const DWORD FORMAT = D3DFVF_XYZ | D3DFVF_DIFFUSE;
-			const int STRIDE_SIZE = 16;
-		};
-		UntransformedColouredVertex vertices[] = {
-			{ 0.0f, 1.2f, 0.0f, 0xffff0000 },
-			{ 1.2f, 0.6f, 0.0f, 0xff00ff00 },
-			{ 1.2f, -0.6f, 0.0f, 0xff0000ff },
-			{ 0.0f, -1.2f, 0.0f, 0xffffff },
-			{ -1.2f, -0.6f, 0.0f, 0xffffff00 },
-			{ -1.2f, 0.6f, 0.0f, 0xff00ffff }
-		};
-		IDirect3DVertexBuffer9* vertexBuffer = NULL;
-
-		HRESULT result = Device->CreateVertexBuffer(sizeof(vertices), D3DUSAGE_WRITEONLY, vertices[0].FORMAT, D3DPOOL_DEFAULT, &vertexBuffer, NULL);
-
-		void* bufferMemory;
-		result = vertexBuffer->Lock(0, sizeof(vertices), &bufferMemory, NULL);
-		memcpy(bufferMemory, vertices, sizeof(vertices));
-
-		vertexBuffer->Unlock();
-		Device->SetFVF(vertices[0].FORMAT);
-		Device->SetStreamSource(0, vertexBuffer, 0, vertices[0].STRIDE_SIZE);
-		Device->DrawPrimitive(D3DPT_TRIANGLELIST, 0, 1);
-		if (vertexBuffer != NULL) {
-			vertexBuffer->Release();
-			vertexBuffer = NULL;
-		}
-		return D3D_OK;*/
 		Device->SetPixelShader(sGreen);
 	}
 	else if (hack_config.chestChams && ((NumVertices == 291 && primCount == 424) || (NumVertices == 125 && primCount == 188)) )
@@ -597,20 +563,22 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 	if (hack_config.holdKey) {
 		int boxw = 20;
 		FillRGB(Device, (viewport.Width / 2)-(boxw /2), viewport.Height - 140, boxw, 20, D3DCOLOR_ARGB(255, 0, 255, 0));
-	}
-	if (GetAsyncKeyState(prevKey))
-	{
-		if (keydownFrameCount < 100)
-			keydownFrameCount++;
-		else {
-			keydownFrameCount = 0;
-			key_press(prevKey, true);
+
+		if (GetAsyncKeyState(prevKey))
+		{
+			if (keydownFrameCount < 100)
+				keydownFrameCount++;
+			else {
+				keydownFrameCount = 0;
+				//key_press(prevKey);
+				key_press(prevKey, true);
+			}
+		}
+		else if (hack_config.holdKey) {
+			key_press(prevKey);
 		}
 	}
-	else if (hack_config.holdKey) {
-			key_press(prevKey);
-	}
-	
+
 	if (GetAsyncKeyState(0x70) & 1) {
 		hack_config.holdKey = !hack_config.holdKey;
 		if (hack_config.holdKey)
@@ -802,10 +770,10 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 					}
 				}
 
-				if (teleQueue.size() > 0) {
+		/*		if (teleQueue.size() > 0) {
 					teleport(teleQueue.back(), true);
 					teleQueue.pop_back();
-				}
+				}*/
 			}///endif player
 
 //////debug misc
@@ -960,18 +928,20 @@ void __declspec(naked) RecvPacketHook() {
 		ret 8
 	}
 }
-void writeJmpHook(DWORD dwAddy, LPVOID dwHook, UINT nNops) {
-	if (!dwAddy) {
-		return;
-	}
-	DWORD dwOldProtect;
-	VirtualProtect((LPVOID)dwAddy, 5 + nNops, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-	*(BYTE*)dwAddy = (BYTE)0xE9;
-	*(DWORD*)(dwAddy + 1) = (DWORD)(((DWORD)dwHook - (DWORD)dwAddy) - 5);
-	FillMemory((LPVOID)(dwAddy + 5), nNops, 0x90);
-	VirtualProtect((LPVOID)dwAddy, 5 + nNops, dwOldProtect, &dwOldProtect);
-}
+bool write_packet_hooks() {
+	initMaps();
 
+	//	packetRecv = AobScan(AY_OBFUSCATE("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2"));
+	//	packetRecv += 19;
+	DWORD packetRecv = 0x005C3476;
+	DWORD packetSend = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));
+	//	packetSend = 0x5BED10;
+
+	writeJmpHook(packetSend, SendPacketHook, 3);
+	writeJmpHook(packetRecv, RecvPacketHook, 3);
+
+	return true;
+}
 LRESULT CALLBACK MsgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -988,6 +958,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			switchTabs = 0;
 		return true;
 	}
+	/*if (msg == WM_KILLFOCUS) {
+		return 1;
+	}
+	if (msg == WM_NCACTIVATE) {
+		if (!wParam) {
+			return true;
+		}
+	}*/
 	return CallWindowProc(game_wndprc, hWnd, msg, wParam, lParam);
 }
 //=====================================================================================
@@ -1093,19 +1071,10 @@ DWORD WINAPI HookThread(LPVOID)
 #endif
 
 
-#if defined(DEV) && !defined(KMS)
+#if defined(DEV)
 	oSetRenderState = (tSetRenderState)DetourFunction((BYTE*)pVTable[57], (BYTE*)hkSetRenderState);
-
-	initMaps();
-
-//	packetRecv = AobScan(AY_OBFUSCATE("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2"));
-//	packetRecv += 19;
-	packetRecv = 0x005C3476;
-	packetSend = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));
-//	packetSend = 0x5BED10;
-
-	writeJmpHook(packetSend, SendPacketHook, 3);
-	writeJmpHook(packetRecv, RecvPacketHook, 3);
+	hack_config.zoomCap = 1700;
+	
 #endif
 	return 0;
 }
