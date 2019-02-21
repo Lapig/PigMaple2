@@ -1,8 +1,8 @@
-struct CInPacket {
-	//	padding(0x10);
-	char* pBuffer; //0x10
+class CInPacket {
+	unsigned char pad1[10];
+	unsigned char* pBuffer; //0x10
 //	padding(0x8); //0x14
-	int nSize; //0x20
+	unsigned long nSize; //0x20
 //	padding(0x8); //0x24
-	int nPad; //0x30
+	unsigned long nPad; //0x30
 };

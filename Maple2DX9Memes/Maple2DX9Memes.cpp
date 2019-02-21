@@ -2,8 +2,8 @@
 #include <windows.h>
 #include <d3d9.h>
 #include <d3dx9.h>
-#pragma comment(lib, "d3dx9.lib")
-#pragma comment(lib, "d3d9.lib")
+//#pragma comment(lib, "d3dx9.lib")
+//#pragma comment(lib, "d3d9.lib")
 #include <detours.h>
 #include <sstream>
 #include <string>
@@ -18,7 +18,7 @@
 
 #include <TlHelp32.h>
 #include <iostream>
-#include "obfuscate.h"
+
 #include "flags.h"
 
 //#define TEST_ENV		//For gui testing, allows injection into any dx9 exe
@@ -79,12 +79,17 @@ LPD3DXFONT dxFont;
 //shader
 IDirect3DPixelShader9 *sGreen = NULL;
 IDirect3DPixelShader9 *sRed = NULL;
+IDirect3DPixelShader9 *sBlue = NULL;
 
 IDirect3DPixelShader9 *shaderPrev=NULL;
-char ShaderRed[] = "ps_2_0 def c0, 1.0, 0.0, 0.0, 0.8 mov oC0, c0 mov oDepth, c0.b";
+char ShaderRed[] = "ps_2_0 def c0, 1.0, 0.0, 0.0, 1.0 mov oC0, c0 mov oDepth, c0.b";
 char ShaderGreen[] = "ps_2_0 def c0, 0.0, 1.0, 0.0, 1.0 mov oC0, c0 mov oDepth, c0.b";
+char ShaderBlue[] = "ps_2_0 def c0, 0.0, 0.0, 1.0, 1.0 mov oC0, c0 mov oDepth, c0.b";
+
 ID3DXBuffer *ShaderBufferColor = NULL;
 ID3DXBuffer *ShaderBufferChest = NULL;
+ID3DXBuffer *ShaderBufferBlue = NULL;
+
 
 WNDPROC game_wndprc;
 HWND game_hwnd;
@@ -113,7 +118,7 @@ static DWORD packetSend = 0x0;
 
 static DWORD nxCharacter = 0x0;
 
-
+//FISHING MANAGER 8b ? ? ? ? ? 89 ? ? e8 ? ? ? ? b8 3RD
 std::vector<unsigned int> cameraptroffsets = { 0x120,0x88 };
 std::vector<unsigned int> playerbaseoffsets = { 0x1B4,0x390 };
 std::vector<unsigned int> deltaspeedoffsets = { 0x1B4,0x120 };
@@ -203,6 +208,7 @@ DWORD wireFrame = 0;
 DWORD showDebug = 0;
 bool cameraHookState = false;
 
+#if 0
 MODULEENTRY32 GetModuleInfo(std::uint32_t ProcessID, const char* ModuleName)
 {
 	void* hSnap = nullptr;
@@ -224,6 +230,7 @@ MODULEENTRY32 GetModuleInfo(std::uint32_t ProcessID, const char* ModuleName)
 	CloseHandle(hSnap);
 	return { 0 };
 }
+#endif
 
 void registerMove() {
 	DWORD statePtr = readPointerOffset(playerPtrBase, playerstateoffsets);
@@ -331,33 +338,65 @@ void resetFloorOffset() {
 	}
 }
 
+#pragma region MACRO
+typedef struct tag_KEYDATA {
+	WORD keyRepeatCnt; // 16 bits
+	unsigned int keyScanCode; // 8 bits
+	// additional keys on the enhanced keyboard he extended keys consist of the ALT and CTRL keys on the right-hand side of the keyboard;
+	// the INS, DEL, HOME, END, PAGE UP, PAGE DOWN, and arrow keys in the clusters to the left of the numeric keypad;
+	// the NUM LOCK key; the BREAK (CTRL+PAUSE) key; the PRINT SCRN key; and the divide (/) and ENTER keys in the numeric keypad.
+	BYTE flagExtendedKey : 1;
+	BYTE Reserved : 3;
+	BYTE flagAltDown : 1;
+	BYTE flagRepeat : 1;
+	BYTE flagUp : 1;
+} KEYDATA;
+DWORD createKeyData(int Key) {
+	KEYDATA kd;
+	memset(&kd, 0, sizeof(KEYDATA));
+	kd.keyRepeatCnt = 1;
+	kd.keyScanCode = MapVirtualKey(Key, 0);
+	kd.flagExtendedKey = 0;
+	kd.Reserved = 0;
+	kd.flagAltDown = 0; // this has to be 0 else no lumping of messages
+	kd.flagRepeat = 1; // this is necessary for proper execution in maplestory
+	kd.flagUp = 0;
+	DWORD dwVal;
+	memcpy(&dwVal, &kd, sizeof(DWORD));
+	return dwVal;
+}
 static unsigned int prevKey = 0;
 void key_press(unsigned int key, bool keyup)
 {
+	//PostMessage(game_hwnd, (keyup) ? WM_KEYUP : WM_KEYDOWN, MapVirtualKey(key, 0), createKeyData(key));
+	//return;
 //	if (::GetForegroundWindow() == game_hwnd)
 //		return;
 	prevKey = key;
-	INPUT in[1] = { 0 };
-	in[0].type = INPUT_KEYBOARD;
+	INPUT in;
+	ZeroMemory(&in, sizeof(INPUT));
+	in.type = INPUT_KEYBOARD;
 	auto scanCode = MapVirtualKey(key, 0);
 	
-	in[0].ki.wVk = key;
-	in[0].ki.wScan = scanCode; 
-	in[0].ki.dwFlags = KEYEVENTF_SCANCODE;//keydown	keyup = 0x0002
-	if(keyup)
-		in[0].ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;//keydown	keyup = 0x0002
-	in[0].ki.time = 0;
-	in[0].ki.dwExtraInfo = NULL;
+	in.ki.wVk = key;
+	in.ki.wScan = scanCode; 
+//	in.ki.dwFlags = (keyup) ? KEYEVENTF_KEYUP : 0;//KEYEVENTF_SCANCODE;//keydown	keyup = 0x0002
+	if (keyup)
+		in.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;//keydown	keyup = 0x0002
+	else
+		in.ki.dwFlags = 0;
+	in.ki.time = 0;
+	in.ki.dwExtraInfo = NULL;
 
-	SendInput(1, in, sizeof(INPUT));
+	SendInput(1, &in, sizeof(INPUT));
 	//PostMessage(game_hwnd, WM_KEYDOWN, key, NULL);
 	//PostMessage(game_hwnd, WM_CHAR, key, 1);
 	//PostMessage(game_hwnd, WM_KEYUP, key, NULL);
 
 }
+#pragma endregion MACRO
 
-
-#pragma region NullRender
+#pragma region NULLRENDER
 HRESULT hkPresent(LPDIRECT3DDEVICE9 Device, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)
 {
 	if (hack_config.nullRender) {
@@ -418,7 +457,7 @@ HRESULT __stdcall hkSetRenderState(LPDIRECT3DDEVICE9 Device, D3DRENDERSTATETYPE 
 	}
 	return oSetRenderState(Device, State, Value);
 }
-#pragma region
+#pragma endregion NULLRENDER
 static int keydownFrameCount = 0;
 HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVETYPE PrimType, INT BaseVertexIndex, UINT MinVertexIndex, UINT NumVertices, UINT startIndex, UINT primCount)
 {
@@ -434,6 +473,10 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		D3DXAssembleShader(ShaderRed, sizeof(ShaderRed), NULL, NULL, 0, &ShaderBufferChest, NULL);
 		Device->CreatePixelShader((const DWORD*)ShaderBufferChest->GetBufferPointer(), &sRed);
 		ShaderBufferChest->Release();
+
+		D3DXAssembleShader(ShaderBlue, sizeof(ShaderBlue), NULL, NULL, 0, &ShaderBufferBlue, NULL);
+		Device->CreatePixelShader((const DWORD*)ShaderBufferBlue->GetBufferPointer(), &sBlue);
+		ShaderBufferBlue->Release();
 	//	fieldLoadPtr = AobScan("5a 96 ?? ?? 5a 96 90 01");
 
 //Currently useless but neat
@@ -477,6 +520,18 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		if (StreamData != NULL)
 			StreamData->Release();
 	}
+	if (hack_config.playerChams && bodyPrim(NumVertices, primCount)) {
+	//	Device->GetPixelShader(&shaderPrev);
+		Device->SetPixelShader(sBlue);
+		return D3D_OK;
+	//	return oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
+	/*	oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
+		if (shaderPrev != NULL) {
+			Device->SetPixelShader(shaderPrev);
+			//shaderPrev->Release();
+		}
+		return D3D_OK;*/
+	}
 /*
 	//get vSize
 	HRESULT hRet = Device->GetVertexShader(&vShader);
@@ -507,8 +562,10 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		Device->GetPixelShader(&shaderPrev);
 		Device->SetPixelShader(sRed);
 		oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
-		if(shaderPrev!=NULL)
+		if (shaderPrev != NULL) {
 			Device->SetPixelShader(shaderPrev);
+		//	shaderPrev->Release();
+		}
 		
 		if (hack_config.setPrimLog && renders.size()<100) {
 			renders.push_back(renderChange((D3DRENDERSTATETYPE)Stride, startIndex));
@@ -564,19 +621,20 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 		int boxw = 20;
 		FillRGB(Device, (viewport.Width / 2)-(boxw /2), viewport.Height - 140, boxw, 20, D3DCOLOR_ARGB(255, 0, 255, 0));
 
-		if (GetAsyncKeyState(prevKey))
+		 if (keydownFrameCount==0) {
+			key_press(prevKey);
+		}
+	//	if (GetAsyncKeyState(prevKey))
 		{
 			if (keydownFrameCount < 100)
 				keydownFrameCount++;
 			else {
-				keydownFrameCount = 0;
+				keydownFrameCount = -10;
 				//key_press(prevKey);
 				key_press(prevKey, true);
 			}
 		}
-		else if (hack_config.holdKey) {
-			key_press(prevKey);
-		}
+		
 	}
 
 	if (GetAsyncKeyState(0x70) & 1) {
@@ -716,6 +774,17 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 					if (noclipptr)
 						*(float*)(noclipptr) = 0.8f;
 				}
+				else if (player_hacks.fMountNoClip) {
+					DWORD state = readPointerOffset(playerPtrBase, playerstateoffsets);
+					DWORD noclipptr = readPointerOffset(playerPtrBase, noclipoffsets);
+
+					if (noclipptr && state && *(BYTE*)(state) == 30) {//flying
+						*(float*)(noclipptr) = 0;
+					}
+					else if(noclipptr){
+						*(float*)(noclipptr) = 1.5;
+					}
+				}
 				else {
 					DWORD noclipptr = readPointerOffset(playerPtrBase, noclipoffsets);
 					if (noclipptr && *(float*)(noclipptr) != 1.5)
@@ -775,7 +844,7 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 					teleQueue.pop_back();
 				}*/
 			}///endif player
-
+			/*
 //////debug misc
 			if (hack_config.debugMode) {
 				FillRGB(Device, 50, 390, 350, 270, D3DCOLOR_ARGB(200, 34, 34, 34));
@@ -791,17 +860,17 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 				line = ss.str(); ss.str(std::string());
 				dxDrawText(dxFont, 100, 450, 0xFFFFFFFF, (char*)line.c_str());
 				ss << "Zoom: " << viewMat._21 << " Max: " << viewMat._22 /*<< ", " << viewMat._23 << ", " << viewMat._24*/;
-				line = ss.str(); ss.str(std::string());
+		/*		line = ss.str(); ss.str(std::string());
 				dxDrawText(dxFont, 100, 470, 0xFFFFFFFF, (char*)line.c_str());
 				ss << "Roll: " << viewMat._31 << " Yaw: " << viewMat._32 << " Pitch:  " << viewMat._33 /*<< ", " << viewMat._34*/;
-				line = ss.str(); ss.str(std::string());
+		/*		line = ss.str(); ss.str(std::string());
 				dxDrawText(dxFont, 100, 490, 0xFFFFFFFF, (char*)line.c_str());
 				ss << viewMat._41 << ", " << viewMat._42 << ", " << viewMat._43 << ", " << viewMat._44;
 				line = ss.str(); ss.str(std::string());
 				dxDrawText(dxFont, 100, 510, 0xFFFFFFFF, (char*)line.c_str());
-			}
+			}*/
 		}
-#endif
+#endif //testenv
 
 	return oEndScene(Device);
 }
@@ -846,7 +915,7 @@ __declspec(naked) void movement_handler_hook()
 		ret
 	}
 }
-
+#if defined(DEV) and not defined(KMS)
 std::string GetClientHeader(WORD wHeader) {
 	
 	std::string ret = tClient[wHeader];
@@ -859,7 +928,7 @@ std::string GetServerHeader(WORD wHeader) {
 //_ecx = AVCOutPacket::AVCOutputStream
 void __stdcall sendPacketCallback(DWORD _ecx, DWORD _retn) {
 	DWORD nSize = Read<DWORD>(_ecx + 0x8);
-	DWORD headerPtr = Read<DWORD>(_ecx+0x14 );
+	DWORD headerPtr =(Read<DWORD>(_ecx + 0x14));
 	WORD wHeader = 0x0;
 	if (headerPtr) {
 		wHeader = Read<WORD>(headerPtr);
@@ -878,12 +947,22 @@ void __stdcall sendPacketCallback(DWORD _ecx, DWORD _retn) {
 		}
 		sentPackets.push_back(std::string(msg));
 	}
+	if (wHeader == 0x1B) {
+		if (validPlayerPtr()) {
+			DWORD speed = readPointerOffset(playerPtrBase, risespeedoffsets);
+			DWORD bob = readPointerOffset(playerPtrBase, bobflyoffsets);
+			if (speed && bob && *(float*)(speed) > 0.1) {
+				*(float*)(speed) = 8.0f;
+				*(float*)(bob) = 0.0f;
+			}
+		}
+	}
 }
 void __stdcall recvPacketCallback(DWORD _ecx) {
 	DWORD nPad = Read<DWORD>(_ecx + 0x30);
-	LPBYTE pBuffer = Read<LPBYTE>(_ecx + 0x10) +nPad;
-	DWORD nSize = 0x0;//Read<DWORD>(_ecx + 0x20);//- nPad;
-	WORD wHeader = Read<WORD>((DWORD)pBuffer);
+	LPBYTE pBuffer = Read<LPBYTE>(_ecx + 0x10) + nPad;
+	DWORD nSize =Read<DWORD>(_ecx + 0x20);//- nPad;
+	WORD wHeader =Read<WORD>((DWORD)pBuffer);
 	if (wHeader) {
 		if (wHeader >= 5)
 			wHeader -= 5;
@@ -893,12 +972,19 @@ void __stdcall recvPacketCallback(DWORD _ecx) {
 	sprintf_s(msg, 124, "RECV [%04X] - %i - %s - %p", wHeader, nSize, sHeader.c_str(), _ecx);
 	if (wHeader != 0x54 && wHeader!=0x17) {
 		if (recvPackets.size() > 0) {
-			if (strncmp(recvPackets.back().c_str(), msg, 12) == 0)
-				return;
+			//if (strncmp(recvPackets.back().c_str(), msg, 12) == 0)
+//				return;
 		}
 		recvPackets.push_back(std::string(msg));
 	}
+	if (wHeader==0x18) {	//proxy game obj 7b	chat 0x18
+		/*if (teleQueue.size() > 0) {
+			teleport(teleQueue.back());
+			teleQueue.pop_back();
+		}*/
+	}
 }
+
 #define ASM_RET(var,offset) _asm push dword ptr ds:[var] \
     _asm add dword ptr ds:[esp],offset \
     _asm retn
@@ -934,14 +1020,15 @@ bool write_packet_hooks() {
 	//	packetRecv = AobScan(AY_OBFUSCATE("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2"));
 	//	packetRecv += 19;
 	DWORD packetRecv = 0x005C3476;
-	DWORD packetSend = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));
-	//	packetSend = 0x5BED10;
+	// = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));
+	packetSend = 0x005C3650;
 
 	writeJmpHook(packetSend, SendPacketHook, 3);
 	writeJmpHook(packetRecv, RecvPacketHook, 3);
 
 	return true;
 }
+#endif //dev
 LRESULT CALLBACK MsgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -1024,37 +1111,15 @@ DWORD WINAPI HookThread(LPVOID)
 		return 1;
 	}
 	cameraPtrBase = *(DWORD*)(addyCameraPtr + 0x0B);
-	
 	playerPtrBase = *(DWORD*)(addyPlayerBasePtr + 0x01);
+	if (!cameraPtrBase || !playerPtrBase) {
+		Asm::ErrorMessage("Initilization Error");
+		return 1;
+	}
+
+
 	playerPtr = readPointerOffset(playerPtrBase, playerbaseoffsets);
 
-/*	
-
-	while (nxCharacter==0x0)
-		nxCharacter = (DWORD)GetModuleHandle("NxCharacter.dll");
-
-//	physxCore = (DWORD)GetModuleHandle("physxcore.dll");
-//	physxCore += 0x12FBA0;
-
-//	nxCharacter += 0xD490;
-	nxCharacter += 0x1218;
-	DWORD  old;
-	VirtualProtect((PVOID)(nxCharacter), 16, PAGE_EXECUTE_READWRITE, &old);
-//	*(BYTE*)(nxCharacter) = 0xE9;
-	*(DWORD*)(nxCharacter) = jmp(nxCharacter, movement_handler);
-	//*(DWORD*)(nxCharacter + 1) = jmp(nxCharacter, movement_handler_hook);
-	//*(DWORD*)(nxCharacter + 5) = 0xC3;
-	VirtualProtect((PVOID)(nxCharacter), 16, old, &old);
-
- 	char msg[256];
-	sprintf(msg, "%08X", nxCharacter);
-	Asm::ErrorMessage((msg)); 
-	
-	//loadingPtrBase = *(DWORD*)(loadingPtrBase+0x1);
-	//fieldLoadPtr = loadingPtrBase + 0x5;
-/*	if(playerPtr)
-		localStats = reinterpret_cast<PlayerPropertiesShort*>(playerPtr);
-	*/	
 #endif
 	DX_Init(VTable);
 	oDrawIndexedPrimitive = (tDrawIndexedPrimitive)DetourFunction((BYTE*)pVTable[82], (BYTE*)hkDrawIndexedPrimitive);
@@ -1071,9 +1136,10 @@ DWORD WINAPI HookThread(LPVOID)
 #endif
 
 
-#if defined(DEV)
+#if defined(DEV) and not defined(KMS)
 	oSetRenderState = (tSetRenderState)DetourFunction((BYTE*)pVTable[57], (BYTE*)hkSetRenderState);
-	hack_config.zoomCap = 1700;
+	hack_config.zoomCap = 2200;
+//	write_packet_hooks();
 	
 #endif
 	return 0;
@@ -1088,6 +1154,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ulReason, LPVOID lpReserved)
 	{
 		DisableThreadLibraryCalls(hModule);
 		//HookThread(NULL);
+
 		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&HookThread, 0, 0, 0);
 	}
 	break;

@@ -22,7 +22,7 @@ struct renderChange {
 static struct configInfo {
 	bool chestChams = true;
 	bool wireFrame = false;
-	bool portalChams = true;
+	bool portalChams = false;
 	int zoomCap = 1100;
 	bool rollCheck = false;
 	float viewRoll = 90.f;
@@ -43,6 +43,7 @@ static struct configInfo {
 	bool nullRenderCheck = false;
 	bool holdKey = false;
 	unsigned int keycode = 0x20;
+	bool playerChams = false;
 
 	bool noFog = false;
 } hack_config;
@@ -69,6 +70,7 @@ static struct playerHacks {
 	float groundMountSpeed = 0.f;
 	bool mountLock = false;
 	bool semiNoClip = false;
+	bool fMountNoClip = false;
 
 	bool floorOffsetToggle = false;
 	int floorOffset = 0;
@@ -92,7 +94,7 @@ static std::vector<std::string> sentPackets;
 
 static std::vector<float*> teleQueue;
 
-
+#if defined(DEV) and not defined(KMS)
 static std::unordered_map<DWORD, std::string> tClient;
 static std::unordered_map<DWORD, std::string> tServer;
 static void initMaps() {
@@ -478,7 +480,7 @@ static void initMaps() {
 	tServer[0x119] = "ks_world_champion";
 	tServer[0x11A] = "ks_sync_value";
 }
-
+#endif
 template<class T>
 T Read(DWORD dwPointer) {
 	if(dwPointer>0)

@@ -5,7 +5,7 @@ void dxDrawText(LPD3DXFONT dxFont, INT x, INT y, DWORD color, const char *text, 
 {
 	RECT rect;
 	SetRect(&rect, x, y, x + 100, y);
-	dxFont->DrawText(NULL, text, -1, &rect, flag | DT_NOCLIP, color);
+	dxFont->DrawTextA(NULL, text, -1, &rect, flag | DT_NOCLIP, color);
 }
 //=====================================================================================
 
@@ -68,4 +68,24 @@ D3DXVECTOR3 world2Screen(LPDIRECT3DDEVICE9 Device, float x, float y, float z)
 	D3DXVec4Transform(&screenCords, &D3DXVECTOR4(x, y, z, 1), &ViewProjectionMatrix);
 	D3DXVec3Project(&Vector2D, &Vector3D, &Viewport, &WorldMatrix, &ProjMatrix, &ViewProjectionMatrix);
 	return Vector2D;
+}
+
+bool bodyPrim(UINT NumVertices, UINT primCount)
+{
+	return (NumVertices == 154 && primCount == 152) ||
+		(NumVertices == 171 && primCount == 306) ||
+		(NumVertices == 332 && primCount == 226) ||
+		(NumVertices == 2498 && primCount == 3414) ||
+		(NumVertices == 813 && primCount == 1129) ||
+		(NumVertices == 693 && primCount == 978) ||
+		(NumVertices == 272 && primCount == 412) ||
+		(NumVertices == 1224 && primCount == 1454) ||
+		(NumVertices == 256 && primCount == 302) ||
+		(NumVertices == 345 && primCount == 360) ||
+		(NumVertices == 286 && primCount == 282) ||
+		(NumVertices == 126 && primCount == 174) ||
+		(NumVertices == 230 && primCount == 336) ||
+		(NumVertices == 158 && primCount == 218) ||
+		(NumVertices == 310 && primCount == 486) ||
+		(NumVertices == 171 && primCount == 306);
 }

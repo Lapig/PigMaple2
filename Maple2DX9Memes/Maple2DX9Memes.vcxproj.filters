@@ -113,10 +113,10 @@
     <ClInclude Include="engineFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="obfuscate.h">
+    <ClInclude Include="flags.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flags.h">
+    <ClInclude Include="obfuscate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
