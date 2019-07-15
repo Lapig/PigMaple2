@@ -3,6 +3,7 @@
 #include <vector>
 #include "memutil.h"
 #include "flags.h"
+#include <detours.h>
 uintptr_t readPointerOffset(uintptr_t ptr, std::vector<unsigned int> offsets)
 {
 //#ifdef KMS
@@ -37,4 +38,16 @@ unsigned long readDWORD(unsigned long ptrBase, int offset) {
 float readFloat(unsigned long ptrBase, int offset) {
 	__try { return (*(float*)ptrBase + offset); }
 	__except (EXCEPTION_EXECUTE_HANDLER) { return 0; }
+}
+
+PVOID DetourVTable(void** vTable, int index, void* detour)
+{
+	PVOID ret = vTable[index];
+
+	DWORD old;
+	VirtualProtect(&(vTable[index]), sizeof(PVOID), PAGE_EXECUTE_READWRITE, &old);
+	vTable[index] = detour;
+	VirtualProtect(&(vTable[index]), sizeof(PVOID), old, &old);
+
+	return ret;
 }

@@ -1,4 +1,5 @@
 #pragma once
+#ifndef _WIN64
 #include "engineFunctions.h"
 #include "Maple2DX9Memes.h"
 #include "Asm.h"
@@ -50,3 +51,4 @@ DWORD* a2;
 		mov al,1
 	}
 }
+#endif

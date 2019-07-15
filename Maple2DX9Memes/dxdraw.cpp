@@ -8,7 +8,7 @@ void dxDrawText(LPD3DXFONT dxFont, INT x, INT y, DWORD color, const char *text, 
 	dxFont->DrawTextA(NULL, text, -1, &rect, flag | DT_NOCLIP, color);
 }
 //=====================================================================================
-
+#ifndef _WIN64
 void FillRGB(LPDIRECT3DDEVICE9 Device, float x, float y, float w, float h, D3DCOLOR color)
 {
 	static ID3DXLine* pLine;
@@ -31,6 +31,7 @@ void FillRGB(LPDIRECT3DDEVICE9 Device, float x, float y, float w, float h, D3DCO
 	pLine->Draw(vLine, 2, color);
 	pLine->End();
 }
+
 void DrawBox(LPDIRECT3DDEVICE9 Device, float x, float y, float width, float height, float px, D3DCOLOR color)
 {
 	//y -= height;
@@ -41,6 +42,8 @@ void DrawBox(LPDIRECT3DDEVICE9 Device, float x, float y, float width, float heig
 	FillRGB(Device, x, y - px, width, px, color);
 	FillRGB(Device, x + width, y, px, height, color);
 }
+#endif
+#ifdef DEV
 void SetViewSpaceMatrix(LPDIRECT3DDEVICE9 Device, const D3DXVECTOR3* pEye, const D3DXVECTOR3* pAt)
 {
 	D3DXMATRIX m_matView;
@@ -69,7 +72,7 @@ D3DXVECTOR3 world2Screen(LPDIRECT3DDEVICE9 Device, float x, float y, float z)
 	D3DXVec3Project(&Vector2D, &Vector3D, &Viewport, &WorldMatrix, &ProjMatrix, &ViewProjectionMatrix);
 	return Vector2D;
 }
-
+#endif
 bool bodyPrim(UINT NumVertices, UINT primCount)
 {
 	return (NumVertices == 154 && primCount == 152) ||

@@ -45,6 +45,7 @@ void menu_init(void *game_hwnd, LPDIRECT3DDEVICE9 Device)
 	style.ItemInnerSpacing = ImVec2(6, 6);
 	style.ItemSpacing = ImVec2(12, 6);
 	style.WindowPadding = ImVec2(8, 6);
+	style.TabRounding = 1.f;
 
 	//ImColor mainColor = ImColor(54, 54, 54, 255);
 	//ImColor bodyColor = ImColor(24, 24, 24, 240);
@@ -88,6 +89,10 @@ void menu_init(void *game_hwnd, LPDIRECT3DDEVICE9 Device)
 	colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.77f, 0.33f, 1.00f);
 	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(0.87f, 0.55f, 0.08f, 1.00f);
 	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.47f, 0.60f, 0.76f, 0.47f);
+	colors[ImGuiCol_Tab] = ImVec4(0.54f, 0.54f, 0.54f, 0.58f);
+	colors[ImGuiCol_TabActive] = ImVec4(0.25f, 0.25f, 0.25f, 0.80f);
+	colors[ImGuiCol_TabHovered] = ImVec4(0.64f, 0.65f, 0.65f, 0.80f);
+	colors[ImGuiCol_TabUnfocused] = ImVec4(0.54f, 0.54f, 0.54f, 0.58f);
 
 	colors[ImGuiCol_COUNT] = ImVec4(0.26f, 0.26f, 0.26f, 0.63f);
 

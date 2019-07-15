@@ -46,6 +46,7 @@ static struct configInfo {
 	bool playerChams = false;
 
 	bool noFog = false;
+	bool wndProcHooks = false;
 } hack_config;
 
 static struct playerHacks {
@@ -95,6 +96,8 @@ static std::vector<std::string> sentPackets;
 static std::vector<float*> teleQueue;
 
 #if defined(DEV) and not defined(KMS)
+bool write_packet_hooks();
+
 static std::unordered_map<DWORD, std::string> tClient;
 static std::unordered_map<DWORD, std::string> tServer;
 static void initMaps() {

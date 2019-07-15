@@ -2,8 +2,6 @@
 #include <windows.h>
 #include <d3d9.h>
 #include <d3dx9.h>
-//#pragma comment(lib, "d3dx9.lib")
-//#pragma comment(lib, "d3d9.lib")
 #include <detours.h>
 #include <sstream>
 #include <string>
@@ -102,6 +100,7 @@ DWORD dwCrcEnd;		//Note this is literally just the entire region
 BYTE* pCrc32;
 
 static bool MENU_DISPLAYING = false;
+static bool INPUT_MODE = false;
 //=================
 
 
@@ -145,6 +144,8 @@ std::vector<unsigned int> playerstateprevoffsets = { 0x1B4, 0x648, 0xE4, 0xC };
 std::vector<unsigned int> playeranimationoffsets = { 0x1B4, 0x40, 0x40, 0x20 };
 
 static DWORD floorToggle = 0x0;
+
+//yikes zone for old wireframe memes
 bool UIPrim(UINT NumVertices, UINT primCount) {
 	return ((NumVertices == 32 && primCount == 40) || (NumVertices == 24 && primCount == 24) ||
 		(NumVertices == 32 && primCount == 40) ||
@@ -194,7 +195,6 @@ bool UIPrim(UINT NumVertices, UINT primCount) {
 		(NumVertices == 120 && primCount == 60) ||
 		(NumVertices == 224 && primCount == 112));
 }
-
 bool probablyUIPrim(UINT NumVertices, UINT primCount) {
 	return (NumVertices < 10 || primCount < 8) || (NumVertices == 48 && primCount == 60) ||
 		(NumVertices == 171 && primCount == 306) ||
@@ -208,29 +208,6 @@ DWORD wireFrame = 0;
 DWORD showDebug = 0;
 bool cameraHookState = false;
 
-#if 0
-MODULEENTRY32 GetModuleInfo(std::uint32_t ProcessID, const char* ModuleName)
-{
-	void* hSnap = nullptr;
-	MODULEENTRY32 Mod32 = { 0 };
-
-	if ((hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessID)) == INVALID_HANDLE_VALUE)
-		return Mod32;
-
-	Mod32.dwSize = sizeof(MODULEENTRY32);
-	while (Module32Next(hSnap, &Mod32))
-	{
-		if (!_stricmp(ModuleName, Mod32.szModule))
-		{
-			CloseHandle(hSnap);
-			return Mod32;
-		}
-	}
-
-	CloseHandle(hSnap);
-	return { 0 };
-}
-#endif
 
 void registerMove() {
 	DWORD statePtr = readPointerOffset(playerPtrBase, playerstateoffsets);
@@ -339,32 +316,6 @@ void resetFloorOffset() {
 }
 
 #pragma region MACRO
-typedef struct tag_KEYDATA {
-	WORD keyRepeatCnt; // 16 bits
-	unsigned int keyScanCode; // 8 bits
-	// additional keys on the enhanced keyboard he extended keys consist of the ALT and CTRL keys on the right-hand side of the keyboard;
-	// the INS, DEL, HOME, END, PAGE UP, PAGE DOWN, and arrow keys in the clusters to the left of the numeric keypad;
-	// the NUM LOCK key; the BREAK (CTRL+PAUSE) key; the PRINT SCRN key; and the divide (/) and ENTER keys in the numeric keypad.
-	BYTE flagExtendedKey : 1;
-	BYTE Reserved : 3;
-	BYTE flagAltDown : 1;
-	BYTE flagRepeat : 1;
-	BYTE flagUp : 1;
-} KEYDATA;
-DWORD createKeyData(int Key) {
-	KEYDATA kd;
-	memset(&kd, 0, sizeof(KEYDATA));
-	kd.keyRepeatCnt = 1;
-	kd.keyScanCode = MapVirtualKey(Key, 0);
-	kd.flagExtendedKey = 0;
-	kd.Reserved = 0;
-	kd.flagAltDown = 0; // this has to be 0 else no lumping of messages
-	kd.flagRepeat = 1; // this is necessary for proper execution in maplestory
-	kd.flagUp = 0;
-	DWORD dwVal;
-	memcpy(&dwVal, &kd, sizeof(DWORD));
-	return dwVal;
-}
 static unsigned int prevKey = 0;
 void key_press(unsigned int key, bool keyup)
 {
@@ -372,6 +323,7 @@ void key_press(unsigned int key, bool keyup)
 	//return;
 //	if (::GetForegroundWindow() == game_hwnd)
 //		return;
+	INPUT_MODE = true;
 	prevKey = key;
 	INPUT in;
 	ZeroMemory(&in, sizeof(INPUT));
@@ -389,10 +341,14 @@ void key_press(unsigned int key, bool keyup)
 	in.ki.dwExtraInfo = NULL;
 
 	SendInput(1, &in, sizeof(INPUT));
-	//PostMessage(game_hwnd, WM_KEYDOWN, key, NULL);
-	//PostMessage(game_hwnd, WM_CHAR, key, 1);
-	//PostMessage(game_hwnd, WM_KEYUP, key, NULL);
-
+	
+/*	if(keyup)
+		PostMessage(game_hwnd, WM_KEYUP, key, 0xC0390001);
+	else {
+		PostMessage(game_hwnd, WM_KEYDOWN, key, 0x402E0001);
+		PostMessage(game_hwnd, WM_CHAR, key, 0x402E0001);
+	}
+	*/
 }
 #pragma endregion MACRO
 
@@ -481,7 +437,7 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 
 //Currently useless but neat
 
-#if defined(TEST_ENV)==0 && defined(DEV)
+#if 0
 		dwCrcStart = reinterpret_cast<unsigned int>(GetModuleHandleA("MapleStory2.exe"));
 
 		if (dwCrcStart != 0) {
@@ -501,7 +457,7 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 
 		FirstInit = TRUE;
 	}
-
+#ifndef _WIN64
 	DWORD imguiFlag = 0x0;
 	Device->GetRenderState(D3DRS_STENCILFAIL, &imguiFlag);	//6 indicates imgui call
 
@@ -520,17 +476,10 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		if (StreamData != NULL)
 			StreamData->Release();
 	}
-	if (hack_config.playerChams && bodyPrim(NumVertices, primCount)) {
-	//	Device->GetPixelShader(&shaderPrev);
+#endif
+	if (hack_config.playerChams && bodyPrim(NumVertices, primCount)) { //????
 		Device->SetPixelShader(sBlue);
 		return D3D_OK;
-	//	return oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
-	/*	oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
-		if (shaderPrev != NULL) {
-			Device->SetPixelShader(shaderPrev);
-			//shaderPrev->Release();
-		}
-		return D3D_OK;*/
 	}
 /*
 	//get vSize
@@ -546,19 +495,11 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 	}
 	*/
 
-/*	if ((Stride == 20 || Stride == 16))//text? chat at least
-	{
-		return oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
-	}*/
-
-//	Device->GetRenderState(D3DRS_ZENABLE, &zEnable);
-
 	if (hack_config.portalChams && (NumVertices == 144 && primCount == 280)) {	//portals
 		Device->SetPixelShader(sGreen);
 	}
 	else if (hack_config.chestChams && ((NumVertices == 291 && primCount == 424) || (NumVertices == 125 && primCount == 188)) )
 	{
-	//	Device->SetRenderState(D3DRS_ZENABLE, false);
 		Device->GetPixelShader(&shaderPrev);
 		Device->SetPixelShader(sRed);
 		oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
@@ -566,15 +507,16 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 			Device->SetPixelShader(shaderPrev);
 		//	shaderPrev->Release();
 		}
-		
+#ifndef _WIN64	
 		if (hack_config.setPrimLog && renders.size()<100) {
 			renders.push_back(renderChange((D3DRENDERSTATETYPE)Stride, startIndex));
 		}
+#endif
 		return D3D_OK;
 	}
-//	Device->SetRenderState(D3DRS_ZENABLE, zEnable);
 
-//	Device->SetRenderState(D3DRS_FOGENABLE, false);
+
+	//Device->SetRenderState(D3DRS_FOGENABLE, false);
 	//Device->SetRenderState(D3DRS_FOGTABLEMODE, D3DFOG_NONE);
 	return oDrawIndexedPrimitive(Device, PrimType, BaseVertexIndex, MinVertexIndex, NumVertices, startIndex, primCount);
 }
@@ -619,19 +561,20 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 		return D3D_OK;
 	if (hack_config.holdKey) {
 		int boxw = 20;
-		FillRGB(Device, (viewport.Width / 2)-(boxw /2), viewport.Height - 140, boxw, 20, D3DCOLOR_ARGB(255, 0, 255, 0));
+//		FillRGB(Device, (viewport.Width / 2)-(boxw /2), viewport.Height - 140, boxw, 20, D3DCOLOR_ARGB(255, 0, 255, 0));
 
 		 if (keydownFrameCount==0) {
 			key_press(prevKey);
 		}
 	//	if (GetAsyncKeyState(prevKey))
 		{
-			if (keydownFrameCount < 100)
+			if (keydownFrameCount < 70)
 				keydownFrameCount++;
 			else {
 				keydownFrameCount = -10;
 				//key_press(prevKey);
 				key_press(prevKey, true);
+				INPUT_MODE = false;
 			}
 		}
 		
@@ -714,9 +657,6 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 			}
 #endif
 			if (validPlayerPtr() && _play) {
-#ifdef BANABLE
-				if (player_hacks.moveToggle && *(int*)(_play + 0x70) != player_hacks.moveSpeed  && *(int*)(_play + 0x70) < 200)
-					*(int*)(_play + 0x70) = player_hacks.moveSpeed;
 				if (player_hacks.flightSpeedToggle) {
 					DWORD flightSpeedPtr = readPointerOffset(playerPtrBase, flyingspeedoffsets);
 					if (flightSpeedPtr /*&& *(float*)(flightSpeedPtr) != player_hacks.flyingSpeed && readFloat(flightSpeedPtr) < 30*/) {
@@ -724,6 +664,10 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 						*(float*)(flightSpeedPtr) = player_hacks.flyingSpeed;
 					}
 				}
+#ifdef BANABLE
+				if (player_hacks.moveToggle && *(int*)(_play + 0x70) != player_hacks.moveSpeed  && *(int*)(_play + 0x70) < 200)
+					*(int*)(_play + 0x70) = player_hacks.moveSpeed;
+				
 				if (player_hacks.groundMountToggle) {
 					DWORD mountSpeedPtr = readPointerOffset(playerPtrBase, groundmountoffsets);
 					*(float*)(mountSpeedPtr) = player_hacks.groundMountSpeed;
@@ -844,31 +788,6 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 					teleQueue.pop_back();
 				}*/
 			}///endif player
-			/*
-//////debug misc
-			if (hack_config.debugMode) {
-				FillRGB(Device, 50, 390, 350, 270, D3DCOLOR_ARGB(200, 34, 34, 34));
-				std::stringstream ss;
-				std::string line;
-
-				DWORD posbase = readPointerOffset(playerPtrBase, posbaseoffsets);
-
-				ss << std::hex << camera;
-				line = ss.str(); ss.str(std::string());
-				dxDrawText(dxFont, 70, 420, 0xFFFFFFFF, (char*)line.c_str());
-				ss << "Eye: " << viewMat._11 << ", " << viewMat._12 << ", " << viewMat._13 << ", " << viewMat._14;
-				line = ss.str(); ss.str(std::string());
-				dxDrawText(dxFont, 100, 450, 0xFFFFFFFF, (char*)line.c_str());
-				ss << "Zoom: " << viewMat._21 << " Max: " << viewMat._22 /*<< ", " << viewMat._23 << ", " << viewMat._24*/;
-		/*		line = ss.str(); ss.str(std::string());
-				dxDrawText(dxFont, 100, 470, 0xFFFFFFFF, (char*)line.c_str());
-				ss << "Roll: " << viewMat._31 << " Yaw: " << viewMat._32 << " Pitch:  " << viewMat._33 /*<< ", " << viewMat._34*/;
-		/*		line = ss.str(); ss.str(std::string());
-				dxDrawText(dxFont, 100, 490, 0xFFFFFFFF, (char*)line.c_str());
-				ss << viewMat._41 << ", " << viewMat._42 << ", " << viewMat._43 << ", " << viewMat._44;
-				line = ss.str(); ss.str(std::string());
-				dxDrawText(dxFont, 100, 510, 0xFFFFFFFF, (char*)line.c_str());
-			}*/
 		}
 #endif //testenv
 
@@ -898,7 +817,7 @@ HRESULT APIENTRY hkReset(IDirect3DDevice9* pDevice, D3DPRESENT_PARAMETERS *pPres
 	return result;
 }
 //=====================================================================================
-
+#ifndef _WIN64
 __declspec(naked) void movement_handler_hook()
 {
 	__asm {
@@ -915,6 +834,7 @@ __declspec(naked) void movement_handler_hook()
 		ret
 	}
 }
+#endif
 #if defined(DEV) and not defined(KMS)
 std::string GetClientHeader(WORD wHeader) {
 	
@@ -962,6 +882,8 @@ void __stdcall recvPacketCallback(DWORD _ecx) {
 	DWORD nPad = Read<DWORD>(_ecx + 0x30);
 	LPBYTE pBuffer = Read<LPBYTE>(_ecx + 0x10) + nPad;
 	DWORD nSize =Read<DWORD>(_ecx + 0x20);//- nPad;
+
+	DWORD outBuffer = nSize - nPad;
 	WORD wHeader =Read<WORD>((DWORD)pBuffer);
 	if (wHeader) {
 		if (wHeader >= 5)
@@ -984,7 +906,7 @@ void __stdcall recvPacketCallback(DWORD _ecx) {
 		}*/
 	}
 }
-
+static DWORD ecxptr;//0x01AD3630
 #define ASM_RET(var,offset) _asm push dword ptr ds:[var] \
     _asm add dword ptr ds:[esp],offset \
     _asm retn
@@ -998,7 +920,8 @@ void __declspec(naked) SendPacketHook() {
 		popad
 
 		mov eax, ecx
-		mov ecx, dword ptr ds : [0x01AA7C88]
+		mov ecx, [ecxptr]
+		mov ecx, [ecx]
 		ASM_RET(packetSend, 8)
 	}
 }
@@ -1017,11 +940,16 @@ void __declspec(naked) RecvPacketHook() {
 bool write_packet_hooks() {
 	initMaps();
 
-	//	packetRecv = AobScan(AY_OBFUSCATE("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2"));
-	//	packetRecv += 19;
-	DWORD packetRecv = 0x005C3476;
-	// = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));
-	packetSend = 0x005C3650;
+	packetRecv = AobScan(AY_OBFUSCATE("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2"));
+	packetRecv += 0x19;				//pop esi pop epb ret 0008
+//	packetRecv = 0x005C9F76;
+	packetSend = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));		//mov eax, ecx 
+	if (packetRecv == 0x0 || packetSend == 0x0)
+		return false;
+	ecxptr = *(DWORD*)(packetSend + 0x4);
+//	packetSend = 0x005CA150;
+
+	//STILL NEED TO MANUALLY UPDATE PTR IN SENDHOOK
 
 	writeJmpHook(packetSend, SendPacketHook, 3);
 	writeJmpHook(packetRecv, RecvPacketHook, 3);
@@ -1045,19 +973,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			switchTabs = 0;
 		return true;
 	}
-	/*if (msg == WM_KILLFOCUS) {
+	if (hack_config.wndProcHooks == false) {
+		return CallWindowProc(game_wndprc, hWnd, msg, wParam, lParam);
+	}
+	/*if (msg == WM_NULL) {
 		return 1;
+	}*/
+	if (msg == WM_IME_SETCONTEXT) {
+		if (wParam == 0)
+			wParam = 1;
+	}
+
+	if (msg == WM_CAPTURECHANGED) {
+		lParam = 0x0;
+	}
+	if (msg == WM_KILLFOCUS) {
+		msg = WM_ACTIVATE;
+		wParam = 1;
+	}
+	if(msg==WM_ACTIVATEAPP || msg == WM_ACTIVATE){
+		if(!wParam)
+			return 0;
 	}
 	if (msg == WM_NCACTIVATE) {
-		if (!wParam) {
-			return true;
-		}
-	}*/
+		msg = WM_ACTIVATE;
+		wParam = 1;
+		/*if (!wParam) {
+			return 0;
+		}*/
+	}
 	return CallWindowProc(game_wndprc, hWnd, msg, wParam, lParam);
 }
 //=====================================================================================
-DWORD* pVTable;
-void DX_Init(DWORD* table)
+DWORD_PTR* pVTable;
+void DX_Init(DWORD_PTR* table)
 {
 	LPDIRECT3D9 pD3D = Direct3DCreate9(D3D_SDK_VERSION);
 	D3DPRESENT_PARAMETERS d3dpp;
@@ -1071,8 +1020,8 @@ void DX_Init(DWORD* table)
 	d3dpp.hDeviceWindow = game_hwnd;
 
 	pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, game_hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp, &Device);
-	pVTable = (DWORD*)Device;
-	pVTable = (DWORD*)pVTable[0];
+	pVTable = (DWORD_PTR*)Device;
+	pVTable = (DWORD_PTR*)pVTable[0];
 }
 
 BOOL CALLBACK find_game_hwnd(HWND hwnd, LPARAM game_pid) {
@@ -1087,41 +1036,17 @@ BOOL CALLBACK find_game_hwnd(HWND hwnd, LPARAM game_pid) {
 }
 
 
-#define jmp(frm, to) (int)(((int)to - (int)frm) - 5);
 HMODULE hmRendDx9Base = NULL;
 DWORD WINAPI HookThread(LPVOID)
 {
 	DWORD VTable[3] = { 0 };
 
-	while (hmRendDx9Base == NULL)
-	{
-		hmRendDx9Base = GetModuleHandleA("d3d9.dll");
-	}
-#ifndef TEST_ENV
-	while (!FindWindowA("MapleStory2", NULL));	//Dont hook cef
-#endif
-	EnumWindows(find_game_hwnd, GetCurrentProcessId());
 
-#ifndef TEST_ENV
-	DWORD addyCameraPtr = AobScan(AY_OBFUSCATE("E8 ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 ?? 5F"));
-	addyPlayerBasePtr = AobScan(AY_OBFUSCATE("A1 ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? 83 ?? ?? 85 ?? 74 ?? 8B ?? ?? F3 ?? ?? ?? ?? 89"));
-//	loadingPtrBase = AobScan(AY_OBFUSCATE("B9 ?? ?? ?? ?? C7 ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? 8B ?? ?? C7"));
-	if (!addyCameraPtr || !addyPlayerBasePtr || !game_hwnd) {
-		Asm::ErrorMessage("Initilization Error");
-		return 1;
-	}
-	cameraPtrBase = *(DWORD*)(addyCameraPtr + 0x0B);
-	playerPtrBase = *(DWORD*)(addyPlayerBasePtr + 0x01);
-	if (!cameraPtrBase || !playerPtrBase) {
-		Asm::ErrorMessage("Initilization Error");
-		return 1;
-	}
-
-
-	playerPtr = readPointerOffset(playerPtrBase, playerbaseoffsets);
-
-#endif
 	DX_Init(VTable);
+#ifdef _WIN64
+	oDrawIndexedPrimitive = reinterpret_cast<tDrawIndexedPrimitive>(DetourVTable((void**)(&pVTable),82,(void*)&hkDrawIndexedPrimitive));
+	return 0;
+#endif
 	oDrawIndexedPrimitive = (tDrawIndexedPrimitive)DetourFunction((BYTE*)pVTable[82], (BYTE*)hkDrawIndexedPrimitive);
 	oEndScene = (tEndScene)DetourFunction((BYTE*)pVTable[42], (BYTE*)hkEndScene);
 	oReset = (tReset)DetourFunction((BYTE*)pVTable[16], (BYTE*)hkReset);
@@ -1145,6 +1070,34 @@ DWORD WINAPI HookThread(LPVOID)
 	return 0;
 }
 
+int Initialize() {
+	while (hmRendDx9Base == NULL)
+	{
+		hmRendDx9Base = GetModuleHandleA("d3d9.dll");
+	}
+#ifndef TEST_ENV
+	while (!FindWindowA("MapleStory2", NULL));	//Dont hook cef
+#endif
+	EnumWindows(find_game_hwnd, GetCurrentProcessId());
+
+	DWORD addyCameraPtr = AobScan(AY_OBFUSCATE("E8 ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 ?? 5F"));
+	addyPlayerBasePtr = AobScan(AY_OBFUSCATE("A1 ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? 83 ?? ?? 85 ?? 74 ?? 8B ?? ?? F3 ?? ?? ?? ?? 89")); //fairly certain these both are just player base
+	//	loadingPtrBase = AobScan(AY_OBFUSCATE("B9 ?? ?? ?? ?? C7 ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? 8B ?? ?? C7"));
+	if (!addyCameraPtr || !addyPlayerBasePtr || !game_hwnd) {
+		Asm::ErrorMessage("Initilization Error");
+		return 1;
+	}
+	cameraPtrBase = *(DWORD*)(addyCameraPtr + 0x0B);
+	playerPtrBase = *(DWORD*)(addyPlayerBasePtr + 0x01);
+	if (!cameraPtrBase || !playerPtrBase) {
+		Asm::ErrorMessage("Initilization Error");
+		return 1;
+	}
+	playerPtr = readPointerOffset(playerPtrBase, playerbaseoffsets);
+
+	HookThread(NULL);
+}
+
 //=========
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ulReason, LPVOID lpReserved)
 {
@@ -1153,9 +1106,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ulReason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 	{
 		DisableThreadLibraryCalls(hModule);
-		//HookThread(NULL);
-
-		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&HookThread, 0, 0, 0);
+		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&Initialize, 0, 0, 0);
 	}
 	break;
 	case DLL_PROCESS_DETACH:

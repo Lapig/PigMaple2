@@ -158,7 +158,39 @@ __forceinline void draw_menu(bool* status, DWORD player)
 	float width = ImGui::GetWindowWidth() / tabCount - tabPad;
 	float pad = 75;
 
-
+	ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTooltip | ImGuiTabBarFlags_FittingPolicyResizeDown;
+	if (ImGui::BeginTabBar("Tabs", tab_bar_flags))
+	{
+		if (ImGui::BeginTabItem("View"))
+		{
+			switchTabs = 0;
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Char"))
+		{
+			switchTabs = 1;
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Tele"))
+		{
+			switchTabs = 2;
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Macro"))
+		{
+			switchTabs = 3;
+			ImGui::EndTabItem();
+		}
+#ifdef DEV
+		if (ImGui::BeginTabItem("Dev"))
+		{
+			switchTabs = 4;
+			ImGui::EndTabItem();
+		}
+#endif
+		ImGui::EndTabBar();
+	}
+#ifdef OLD_TABS
 	if (switchTabs == 0)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.63f));
 	if (ImGui::Button(AY_OBFUSCATE("View"), ImVec2(width, 0.0f)))
@@ -199,6 +231,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		switchTabs = 4;
 	else if (switchTabs == 4)
 		ImGui::PopStyleColor(1);
+#endif
 #endif
 	ImGui::PushAllowKeyboardFocus(false);
 	//	ImGui::PopStyleColor(1);
@@ -251,6 +284,9 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		ImGui::Checkbox(AY_OBFUSCATE("Delta"), &player_hacks.deltaToggle);
 		ImGui::SameLine(pad + 25);
 		ImGui::SliderFloat(AY_OBFUSCATE("##deltaspeed"), &player_hacks.deltaSpeed, 3.5, 25);
+		ImGui::Checkbox(AY_OBFUSCATE("Flight"), &player_hacks.flightSpeedToggle);
+		ImGui::SameLine(pad+25);
+		ImGui::SliderFloat(AY_OBFUSCATE("##flyingspeed"), &player_hacks.flyingSpeed, 0, 30);
 #ifdef BANABLE
 		ImGui::Checkbox(AY_OBFUSCATE("Move"), &player_hacks.moveToggle);
 		ImGui::SameLine(pad);
@@ -258,9 +294,6 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		ImGui::Checkbox(AY_OBFUSCATE("Mount"), &player_hacks.groundMountToggle);
 		ImGui::SameLine(pad);
 		ImGui::SliderFloat(AY_OBFUSCATE("##mountspeed"), &player_hacks.groundMountSpeed, 0, 8);
-		ImGui::Checkbox(AY_OBFUSCATE("Flight"), &player_hacks.flightSpeedToggle);
-		ImGui::SameLine(pad);
-		ImGui::SliderFloat(AY_OBFUSCATE("##flyingspeed"), &player_hacks.flyingSpeed, 0, 30);
 		ImGui::Separator();
 #endif
 		if (ImGui::Checkbox(AY_OBFUSCATE("Floor"), &player_hacks.floorAdjustToggle)) {
@@ -313,7 +346,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 
 		ImGui::Separator();
 		ImGui::Checkbox(AY_OBFUSCATE("Partial No-Clip"), &player_hacks.semiNoClip);
-		ImGui::Checkbox(AY_OBFUSCATE("FMount No-Clip"), &player_hacks.fMountNoClip);
+		ImGui::Checkbox(AY_OBFUSCATE("Mount No-Clip"), &player_hacks.fMountNoClip);
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip(AY_OBFUSCATE("Full no-clip active while riding flying mount, normal clip when unmounted"));
 
@@ -421,7 +454,11 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		if (ImGui::Button(AY_OBFUSCATE("Key Up"))) {
 			key_press(hack_config.keycode, true);
 		}
-		break; }
+		ImGui::Checkbox(AY_OBFUSCATE("Background Input"), &hack_config.wndProcHooks);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip(AY_OBFUSCATE("Stops the Maplestory window from losing focus, meaning ALL input will be sent to maple as well as the active window"));
+		break;
+	}
 #ifdef DEV
 	case(4):
 		ImGui::BeginChild(AY_OBFUSCATE("renderstates"), ImVec2(500, 440));
@@ -455,6 +492,10 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		ImGui::SameLine();
 		if (ImGui::Button(AY_OBFUSCATE("Key Up"))) {
 			key_press(hack_config.keycode, true);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button(AY_OBFUSCATE("Write packet hook"))) {
+			write_packet_hooks();
 		}
 		if (ImGui::Button(AY_OBFUSCATE("Received Packets")))
 			packetWindow = !packetWindow;
