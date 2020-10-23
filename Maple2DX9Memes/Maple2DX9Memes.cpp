@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <d3d9.h>
 #include <d3dx9.h>
-#include <detours.h>
+#include "detours.h"
 #include <sstream>
 #include <string>
 #include "Asm.h"
@@ -53,7 +53,10 @@ tRelease oRelease;
 bool write_packet_hooks();
 
 //device
-LPDIRECT3DDEVICE9 Device;
+static LPDIRECT3D9              g_pD3D = NULL;
+static LPDIRECT3DDEVICE9        g_pd3dDevice = NULL;
+static D3DPRESENT_PARAMETERS    g_d3dpp = {};
+
 
 //init once
 bool FirstInit = false;
@@ -120,7 +123,7 @@ static DWORD nxCharacter = 0x0;
 //FISHING MANAGER 8b ? ? ? ? ? 89 ? ? e8 ? ? ? ? b8 3RD
 std::vector<unsigned int> cameraptroffsets = { 0x120,0x88 };
 std::vector<unsigned int> playerbaseoffsets = { 0x1B4,0x390 };
-std::vector<unsigned int> deltaspeedoffsets = { 0x1B4,0x120 };
+std::vector<unsigned int> deltaspeedoffsets = { 0x1B4,0x400 };
 std::vector<unsigned int> jumpheightoffsets = { 0x1B4,0x440 };
 
 std::vector<unsigned int> risespeedoffsets = { 0x1B4, 0xe4, 0x14, 0xa8 };
@@ -537,15 +540,20 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 
 		Device->GetViewport(&viewport);
 
+		
+
+		
 		D3DDEVICE_CREATION_PARAMETERS CParams;
 		Device->GetCreationParameters(&CParams);
+
+		game_hwnd = CParams.hFocusWindow;
 		game_wndprc = reinterpret_cast<WNDPROC>(SetWindowLongPtr(CParams.hFocusWindow, GWLP_WNDPROC, (LONG_PTR)WndProc));
 
 		menu_init(game_hwnd, Device);
 	}
 
 //	DWORD _play = readPointerOffset(playerPtrBase, playerbaseoffsets);
-	if ((GetAsyncKeyState(0x2D) & 1)) {
+	if ((GetAsyncKeyState(VK_INSERT) & 1)) {
 		MENU_DISPLAYING = !MENU_DISPLAYING;
 	}
 	if (MENU_DISPLAYING)
@@ -640,7 +648,7 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 				*(float*)(camera + (rollOffset + 0x4)) = hack_config.viewYaw;
 			if (hack_config.pitchCheck)
 				*(float*)(camera + (rollOffset + 0x8)) = hack_config.viewPitch;
-#ifdef DEV
+
 			if (hack_config.eyeXCheck) {
 				*(float*)(camera + 0x30) = hack_config.eyeX;
 			}
@@ -655,8 +663,8 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 				hack_config.eyeY = viewMat[1];
 				hack_config.eyeYPrev = hack_config.eyeY;
 			}
-#endif
-			if (validPlayerPtr() && _play) {
+
+			if (/*validPlayerPtr() &&*/ _play) {
 				if (player_hacks.flightSpeedToggle) {
 					DWORD flightSpeedPtr = readPointerOffset(playerPtrBase, flyingspeedoffsets);
 					if (flightSpeedPtr /*&& *(float*)(flightSpeedPtr) != player_hacks.flyingSpeed && readFloat(flightSpeedPtr) < 30*/) {
@@ -664,7 +672,7 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 						*(float*)(flightSpeedPtr) = player_hacks.flyingSpeed;
 					}
 				}
-#ifdef BANABLE
+
 				if (player_hacks.moveToggle && *(int*)(_play + 0x70) != player_hacks.moveSpeed  && *(int*)(_play + 0x70) < 200)
 					*(int*)(_play + 0x70) = player_hacks.moveSpeed;
 				
@@ -672,17 +680,17 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 					DWORD mountSpeedPtr = readPointerOffset(playerPtrBase, groundmountoffsets);
 					*(float*)(mountSpeedPtr) = player_hacks.groundMountSpeed;
 				}
-#endif
+
 				if (player_hacks.deltaToggle) {
 					DWORD deltaspeedptr = readPointerOffset(playerPtrBase, deltaspeedoffsets);
-					if (deltaspeedptr && *(float*)(deltaspeedptr) != player_hacks.deltaSpeed) {
-						*(float*)(deltaspeedptr) = player_hacks.deltaSpeed;
+					if (deltaspeedptr && *(int*)(deltaspeedptr) != player_hacks.deltaSpeed) {
+						*(int*)(deltaspeedptr) = player_hacks.deltaSpeed;
 					}
 				}
 				else {
 					DWORD deltaspeedptr = readPointerOffset(playerPtrBase, deltaspeedoffsets);
 					if (deltaspeedptr)
-						*(float*)(deltaspeedptr) = 3.5;
+						*(int*)(deltaspeedptr) = 100;
 				}
 				if (player_hacks.noFall) {
 					DWORD nofallptr = readPointerOffset(playerPtrBase, nofalloffsets);
@@ -940,10 +948,10 @@ void __declspec(naked) RecvPacketHook() {
 bool write_packet_hooks() {
 	initMaps();
 
-	packetRecv = AobScan(AY_OBFUSCATE("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2"));
+	packetRecv = AobScan("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2");
 	packetRecv += 0x19;				//pop esi pop epb ret 0008
 //	packetRecv = 0x005C9F76;
-	packetSend = AobScan(AY_OBFUSCATE("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3"));		//mov eax, ecx 
+	packetSend = AobScan("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3");		//mov eax, ecx 
 	if (packetRecv == 0x0 || packetSend == 0x0)
 		return false;
 	ecxptr = *(DWORD*)(packetSend + 0x4);
@@ -973,12 +981,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			switchTabs = 0;
 		return true;
 	}
-	if (hack_config.wndProcHooks == false) {
+/*	if (hack_config.wndProcHooks == false) {
 		return CallWindowProc(game_wndprc, hWnd, msg, wParam, lParam);
 	}
 	/*if (msg == WM_NULL) {
 		return 1;
-	}*/
+	}
 	if (msg == WM_IME_SETCONTEXT) {
 		if (wParam == 0)
 			wParam = 1;
@@ -1000,28 +1008,44 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		wParam = 1;
 		/*if (!wParam) {
 			return 0;
-		}*/
-	}
+		}
+	}*/
 	return CallWindowProc(game_wndprc, hWnd, msg, wParam, lParam);
 }
 //=====================================================================================
 DWORD_PTR* pVTable;
-void DX_Init(DWORD_PTR* table)
+//DWORD* pVTable;
+HWND tmpWnd;
+bool CreateDeviceD3D(HWND hWnd)
 {
-	LPDIRECT3D9 pD3D = Direct3DCreate9(D3D_SDK_VERSION);
-	D3DPRESENT_PARAMETERS d3dpp;
-	ZeroMemory(&d3dpp, sizeof(d3dpp));
-	d3dpp.Windowed = TRUE;
-	d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
-	d3dpp.EnableAutoDepthStencil = TRUE;
-	d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
-	d3dpp.PresentationInterval = D3DPRESENT_INTERVAL_ONE; // Present with vsync
-	d3dpp.hDeviceWindow = game_hwnd;
+	tmpWnd = CreateWindowA("BUTTON", "DX", WS_SYSMENU | WS_MINIMIZEBOX, CW_USEDEFAULT, CW_USEDEFAULT, 300, 300, NULL, NULL, GetModuleHandle(NULL), NULL);
+	if (tmpWnd == NULL)
+	{
+		//OutputDebugStringA("[DirectX] Failed to create temp window");
+		return 0;
+	}
 
-	pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, game_hwnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &d3dpp, &Device);
-	pVTable = (DWORD_PTR*)Device;
+	if ((g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)) == NULL)
+	{
+		//OutputDebugStringA("[DirectX] D3D_SDK_VERSION)) == NUL");
+		return false;
+	}
+
+	// Create the D3DDevice
+	ZeroMemory(&g_d3dpp, sizeof(g_d3dpp));
+	g_d3dpp.Windowed = TRUE;
+	g_d3dpp.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	g_d3dpp.BackBufferFormat = D3DFMT_UNKNOWN;
+	g_d3dpp.hDeviceWindow = tmpWnd;
+	if (g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, tmpWnd, D3DCREATE_HARDWARE_VERTEXPROCESSING, &g_d3dpp, &g_pd3dDevice) < 0)
+	{
+		//OutputDebugStringA("failed to create device");
+		return false;
+	}
+
+	pVTable = (DWORD_PTR*)g_pd3dDevice;
 	pVTable = (DWORD_PTR*)pVTable[0];
+	return true;
 }
 
 BOOL CALLBACK find_game_hwnd(HWND hwnd, LPARAM game_pid) {
@@ -1039,10 +1063,7 @@ BOOL CALLBACK find_game_hwnd(HWND hwnd, LPARAM game_pid) {
 HMODULE hmRendDx9Base = NULL;
 DWORD WINAPI HookThread(LPVOID)
 {
-	DWORD VTable[3] = { 0 };
-
-
-	DX_Init(VTable);
+	CreateDeviceD3D(game_hwnd);
 #ifdef _WIN64
 	oDrawIndexedPrimitive = reinterpret_cast<tDrawIndexedPrimitive>(DetourVTable((void**)(&pVTable),82,(void*)&hkDrawIndexedPrimitive));
 	return 0;
@@ -1062,7 +1083,7 @@ DWORD WINAPI HookThread(LPVOID)
 
 
 #if defined(DEV) and not defined(KMS)
-	oSetRenderState = (tSetRenderState)DetourFunction((BYTE*)pVTable[57], (BYTE*)hkSetRenderState);
+//	oSetRenderState = (tSetRenderState)DetourFunction((BYTE*)pVTable[57], (BYTE*)hkSetRenderState);
 	hack_config.zoomCap = 2200;
 //	write_packet_hooks();
 	
@@ -1070,28 +1091,31 @@ DWORD WINAPI HookThread(LPVOID)
 	return 0;
 }
 
-int Initialize() {
-	while (hmRendDx9Base == NULL)
-	{
-		hmRendDx9Base = GetModuleHandleA("d3d9.dll");
-	}
+void Initialize() {
+	
 #ifndef TEST_ENV
 	while (!FindWindowA("MapleStory2", NULL));	//Dont hook cef
 #endif
 	EnumWindows(find_game_hwnd, GetCurrentProcessId());
 
-	DWORD addyCameraPtr = AobScan(AY_OBFUSCATE("E8 ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 ?? 5F"));
-	addyPlayerBasePtr = AobScan(AY_OBFUSCATE("A1 ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? 83 ?? ?? 85 ?? 74 ?? 8B ?? ?? F3 ?? ?? ?? ?? 89")); //fairly certain these both are just player base
+	DWORD addyCameraPtr = AobScan("E8 ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 ?? 5F");
+	addyPlayerBasePtr = AobScan("A1 ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? 83 ?? ?? 85 ?? 74 ?? 8B ?? ?? F3 ?? ?? ?? ?? 89"); //fairly certain these both are just player base
 	//	loadingPtrBase = AobScan(AY_OBFUSCATE("B9 ?? ?? ?? ?? C7 ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? 8B ?? ?? C7"));
-	if (!addyCameraPtr || !addyPlayerBasePtr || !game_hwnd) {
-		Asm::ErrorMessage("Initilization Error");
-		return 1;
+	if (!addyPlayerBasePtr || !game_hwnd) {
+		//if(!addyCameraPtr)
+		//	Asm::ErrorMessage("Initilization Error - Camera Ptr");
+		if(!addyPlayerBasePtr)
+			Asm::ErrorMessage("Initilization Error - Player Base AOB");
+		//return 1;
 	}
 	cameraPtrBase = *(DWORD*)(addyCameraPtr + 0x0B);
 	playerPtrBase = *(DWORD*)(addyPlayerBasePtr + 0x01);
-	if (!cameraPtrBase || !playerPtrBase) {
-		Asm::ErrorMessage("Initilization Error");
-		return 1;
+	if (!playerPtrBase) {
+		////if (!cameraPtrBase)
+		//	Asm::ErrorMessage("Initilization Error - Camera Ptr");
+		if (!playerPtrBase)
+			Asm::ErrorMessage("Initilization Error - Player Base Ptr");
+		//return 1;
 	}
 	playerPtr = readPointerOffset(playerPtrBase, playerbaseoffsets);
 

@@ -3,7 +3,7 @@
 #include <vector>
 #include "memutil.h"
 #include "flags.h"
-#include <detours.h>
+#include "detours.h"
 uintptr_t readPointerOffset(uintptr_t ptr, std::vector<unsigned int> offsets)
 {
 //#ifdef KMS

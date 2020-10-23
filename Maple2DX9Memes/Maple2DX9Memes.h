@@ -56,7 +56,7 @@ static struct playerHacks {
 	bool flightSpeedToggle = false;
 	float flyingSpeed = 6.5;
 	bool deltaToggle = false;
-	float deltaSpeed = 3.5;
+	int deltaSpeed = 200;
 	bool noFall = false;
 	bool noClip = false;
 	bool jumpToggle = false;

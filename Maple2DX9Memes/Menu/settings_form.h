@@ -283,7 +283,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 
 		ImGui::Checkbox(AY_OBFUSCATE("Delta"), &player_hacks.deltaToggle);
 		ImGui::SameLine(pad + 25);
-		ImGui::SliderFloat(AY_OBFUSCATE("##deltaspeed"), &player_hacks.deltaSpeed, 3.5, 25);
+		ImGui::SliderInt("##deltaspeed", &player_hacks.deltaSpeed, 100, 200);
 		ImGui::Checkbox(AY_OBFUSCATE("Flight"), &player_hacks.flightSpeedToggle);
 		ImGui::SameLine(pad+25);
 		ImGui::SliderFloat(AY_OBFUSCATE("##flyingspeed"), &player_hacks.flyingSpeed, 0, 30);
