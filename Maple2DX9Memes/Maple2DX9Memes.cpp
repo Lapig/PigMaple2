@@ -438,26 +438,6 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		ShaderBufferBlue->Release();
 	//	fieldLoadPtr = AobScan("5a 96 ?? ?? 5a 96 90 01");
 
-//Currently useless but neat
-
-#if 0
-		dwCrcStart = reinterpret_cast<unsigned int>(GetModuleHandleA("MapleStory2.exe"));
-
-		if (dwCrcStart != 0) {
-			DWORD dwCrcSize = PIMAGE_NT_HEADERS(dwCrcStart + PIMAGE_DOS_HEADER(dwCrcStart)->e_lfanew)->OptionalHeader.SizeOfImage;
-
-			pCrc32 = reinterpret_cast<unsigned char*>(malloc(dwCrcSize));
-			memcpy(pCrc32, reinterpret_cast<void*>(dwCrcStart), dwCrcSize);
-
-			dwCrcEnd = dwCrcStart + dwCrcSize;
-		}
-		else {
-			Asm::ErrorMessage("CRC Error");
-		}
-
-	//	write_packet_hooks();
-#endif
-
 		FirstInit = TRUE;
 	}
 #ifndef _WIN64
@@ -484,19 +464,7 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 		Device->SetPixelShader(sBlue);
 		return D3D_OK;
 	}
-/*
-	//get vSize
-	HRESULT hRet = Device->GetVertexShader(&vShader);
-	if (SUCCEEDED(hRet) && vShader != NULL)
-	{
-		hRet = vShader->GetFunction(NULL, &vSize);
-		if (SUCCEEDED(hRet) && vShader != NULL)
-		{
-			vShader->Release();
-			vShader = NULL;
-		}
-	}
-	*/
+
 
 	if (hack_config.portalChams && (NumVertices == 144 && primCount == 280)) {	//portals
 		Device->SetPixelShader(sGreen);
@@ -510,11 +478,9 @@ HRESULT __stdcall hkDrawIndexedPrimitive(LPDIRECT3DDEVICE9 Device, D3DPRIMITIVET
 			Device->SetPixelShader(shaderPrev);
 		//	shaderPrev->Release();
 		}
-#ifndef _WIN64	
 		if (hack_config.setPrimLog && renders.size()<100) {
 			renders.push_back(renderChange((D3DRENDERSTATETYPE)Stride, startIndex));
 		}
-#endif
 		return D3D_OK;
 	}
 
@@ -539,9 +505,6 @@ HRESULT __stdcall hkEndScene(LPDIRECT3DDEVICE9 Device)
 		D3DXCreateFontA(Device, 14, 0, FW_BOLD, 0, 0, DEFAULT_CHARSET, OUT_TT_ONLY_PRECIS, PROOF_QUALITY, DEFAULT_PITCH | FF_DONTCARE, "Consolas", &dxFont);
 
 		Device->GetViewport(&viewport);
-
-		
-
 		
 		D3DDEVICE_CREATION_PARAMETERS CParams;
 		Device->GetCreationParameters(&CParams);
@@ -867,7 +830,7 @@ void __stdcall sendPacketCallback(DWORD _ecx, DWORD _retn) {
 	}
 	std::string sHeader = GetClientHeader(wHeader);
 	char msg[124];
-	sprintf_s(msg, 124, "SEND [%04X] %p - %i - %s - %p", wHeader, _retn, nSize, sHeader.c_str(), _ecx);
+	sprintf_s(msg, 124, "SEND [%04X] - %s - %p - %d - %p", wHeader, sHeader.c_str(), _retn, nSize, _ecx);
 	if (wHeader != 0x200) {
 		if (sentPackets.size() > 0) {
 			if (strncmp(sentPackets.back().c_str(), msg, 12) == 0)
@@ -899,7 +862,7 @@ void __stdcall recvPacketCallback(DWORD _ecx) {
 	}
 	std::string sHeader = GetServerHeader(wHeader);
 	char msg[124];
-	sprintf_s(msg, 124, "RECV [%04X] - %i - %s - %p", wHeader, nSize, sHeader.c_str(), _ecx);
+	sprintf_s(msg, 124, "RECV [%04X] - %s - %p", wHeader, sHeader.c_str(), _ecx);
 	if (wHeader != 0x54 && wHeader!=0x17) {
 		if (recvPackets.size() > 0) {
 			//if (strncmp(recvPackets.back().c_str(), msg, 12) == 0)
@@ -950,14 +913,12 @@ bool write_packet_hooks() {
 
 	packetRecv = AobScan("8B ?? ?? 56 8B ?? ?? 2B ?? 56 51 8B 0D ?? ?? ?? ?? 03 ?? 50 E8 ?? ?? ?? ?? 5E 5D C2");
 	packetRecv += 0x19;				//pop esi pop epb ret 0008
-//	packetRecv = 0x005C9F76;
+//	packetRecv = 0x005E2536; //v12
 	packetSend = AobScan("8B ?? 8B 0D ?? ?? ?? ?? 85 ?? 74 ?? 50 E8 ?? ?? ?? ?? C3");		//mov eax, ecx 
 	if (packetRecv == 0x0 || packetSend == 0x0)
 		return false;
 	ecxptr = *(DWORD*)(packetSend + 0x4);
-//	packetSend = 0x005CA150;
-
-	//STILL NEED TO MANUALLY UPDATE PTR IN SENDHOOK
+//		mov ecx,[01BF6920] v12
 
 	writeJmpHook(packetSend, SendPacketHook, 3);
 	writeJmpHook(packetRecv, RecvPacketHook, 3);
@@ -1064,10 +1025,7 @@ HMODULE hmRendDx9Base = NULL;
 DWORD WINAPI HookThread(LPVOID)
 {
 	CreateDeviceD3D(game_hwnd);
-#ifdef _WIN64
-	oDrawIndexedPrimitive = reinterpret_cast<tDrawIndexedPrimitive>(DetourVTable((void**)(&pVTable),82,(void*)&hkDrawIndexedPrimitive));
-	return 0;
-#endif
+
 	oDrawIndexedPrimitive = (tDrawIndexedPrimitive)DetourFunction((BYTE*)pVTable[82], (BYTE*)hkDrawIndexedPrimitive);
 	oEndScene = (tEndScene)DetourFunction((BYTE*)pVTable[42], (BYTE*)hkEndScene);
 	oReset = (tReset)DetourFunction((BYTE*)pVTable[16], (BYTE*)hkReset);
@@ -1077,15 +1035,16 @@ DWORD WINAPI HookThread(LPVOID)
 //	oSetVertexShader = (tSetVertexShader)DetourFunction((BYTE*)pVTable[92], (BYTE*)hkSetVertexShader);
 //	oUpdateTexture = (tUpdateTexture)DetourFunction((BYTE*)pVTable[31], (BYTE*)hkUpdateTexture);
 //	oRelease = (tRelease)DetourFunction((BYTE*)pVTable[2], (BYTE*)hkRelease);
+//	oSetRenderState = (tSetRenderState)DetourFunction((BYTE*)pVTable[57], (BYTE*)hkSetRenderState);
+
 #ifdef TEST_ENV
 	return 0;
 #endif
 
 
 #if defined(DEV) and not defined(KMS)
-//	oSetRenderState = (tSetRenderState)DetourFunction((BYTE*)pVTable[57], (BYTE*)hkSetRenderState);
 	hack_config.zoomCap = 2200;
-//	write_packet_hooks();
+	write_packet_hooks();
 	
 #endif
 	return 0;
@@ -1099,8 +1058,8 @@ void Initialize() {
 	EnumWindows(find_game_hwnd, GetCurrentProcessId());
 
 	DWORD addyCameraPtr = AobScan("E8 ?? ?? ?? ?? 85 ?? 75 ?? 8B ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 84 ?? 5F");
-	addyPlayerBasePtr = AobScan("A1 ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? 83 ?? ?? 85 ?? 74 ?? 8B ?? ?? F3 ?? ?? ?? ?? 89"); //fairly certain these both are just player base
-	//	loadingPtrBase = AobScan(AY_OBFUSCATE("B9 ?? ?? ?? ?? C7 ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? 8B ?? ?? C7"));
+	addyPlayerBasePtr = AobScan("A1 ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? 83 ?? ?? 85 ?? 74 ?? 8B ?? ?? F3 ?? ?? ?? ?? 89"); //[01BF8258]
+	//	loadingPtrBase = AobScan(("B9 ?? ?? ?? ?? C7 ?? ?? 00 00 00 00 E8 ?? ?? ?? ?? 8B ?? ?? C7"));
 	if (!addyPlayerBasePtr || !game_hwnd) {
 		//if(!addyCameraPtr)
 		//	Asm::ErrorMessage("Initilization Error - Camera Ptr");

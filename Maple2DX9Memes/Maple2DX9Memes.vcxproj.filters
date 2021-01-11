@@ -116,8 +116,5 @@
     <ClInclude Include="flags.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="obfuscate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

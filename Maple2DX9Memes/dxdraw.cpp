@@ -68,7 +68,9 @@ D3DXVECTOR3 world2Screen(LPDIRECT3DDEVICE9 Device, float x, float y, float z)
 	D3DXMatrixIdentity(&WorldToLocal);
 	D3DXMatrixIdentity(&ProjMatrix);
 	D3DXVECTOR4 screenCords;
-	D3DXVec4Transform(&screenCords, &D3DXVECTOR4(x, y, z, 1), &ViewProjectionMatrix);
+
+	D3DXVECTOR4 unk(x, y, z, 1);
+	D3DXVec4Transform(&screenCords, &unk, &ViewProjectionMatrix);
 	D3DXVec3Project(&Vector2D, &Vector3D, &Viewport, &WorldMatrix, &ProjMatrix, &ViewProjectionMatrix);
 	return Vector2D;
 }

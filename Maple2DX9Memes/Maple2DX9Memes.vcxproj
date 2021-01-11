@@ -39,7 +39,7 @@
     <ProjectGuid>{C55C3D42-17E1-4501-9A78-7DECF9FB65A9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Maple2DX9Memes</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -52,7 +52,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
     <SpectreMitigation>false</SpectreMitigation>
@@ -142,8 +142,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\Users\Lapig\Repo\halo\ms detours 1.5 src\include;D:\Program Files\DirectXSDK\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Users\Lapig\Repo\halo\ms detours 1.5 src\lib;D:\Program Files\DirectXSDK\Lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>G:\Program Files\DirectX9SDK\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>G:\Program Files\DirectX9SDK\Lib\x86;$(LibraryPath)</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
     <EmbedManifest>false</EmbedManifest>
     <TargetName>PigMaple2</TargetName>
@@ -397,7 +397,6 @@
     <ClInclude Include="Menu\stb_rect_pack.h" />
     <ClInclude Include="Menu\stb_textedit.h" />
     <ClInclude Include="Menu\stb_truetype.h" />
-    <ClInclude Include="obfuscate.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

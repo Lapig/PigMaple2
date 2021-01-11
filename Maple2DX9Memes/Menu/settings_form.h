@@ -6,7 +6,6 @@
 #include "../Maple2DX9Memes.h"	
 #include <string>
 #include <vector>
-#include "../obfuscate.h"
 
 void menu_init(void *, LPDIRECT3DDEVICE9);
 using std::vector;
@@ -29,7 +28,7 @@ static std::string selectedPacket = "";
 static void showRecvPackets(bool* p_open)
 {
 	ImGui::SetNextWindowSize(ImVec2(600, 800), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin(AY_OBFUSCATE("Packets"), p_open, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar))
+	if (!ImGui::Begin(("Packets"), p_open, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar))
 	{
 		ImGui::End();
 		return;
@@ -40,44 +39,44 @@ static void showRecvPackets(bool* p_open)
 	static ImGuiTextBuffer log;
 	static int lines = 0;
 
-	ImGui::BeginChild(AY_OBFUSCATE("Filter"), ImVec2(570, 70), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	ImGui::BeginChild(("Filter"), ImVec2(570, 70), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 	ImGui::BeginGroup();
-	ImGui::Text(AY_OBFUSCATE("Received Packets"));
+	ImGui::Text(("Received Packets"));
 	
 	static bool recv=false, send = false, scroll=true;
 
-	if (ImGui::Button(AY_OBFUSCATE("Clear"))) { log.clear(); lines = 0; sentPackets.clear(); recvPackets.clear(); }
+	if (ImGui::Button(("Clear"))) { log.clear(); lines = 0; sentPackets.clear(); recvPackets.clear(); }
 	ImGui::SameLine();
-	ImGui::Checkbox(AY_OBFUSCATE("##recv"), &recv);
+	ImGui::Checkbox(("##recv"), &recv);
 	ImGui::SameLine();
-	if (ImGui::Button(AY_OBFUSCATE("Print Recv")))
+	if (ImGui::Button(("Print Recv")))
 	{
-		ImGui::BeginChild(AY_OBFUSCATE("RecvLog"));
+		ImGui::BeginChild(("RecvLog"));
 
 		for (auto m = recvPackets.begin(); m != recvPackets.end();) {
 			log.appendf((*m).c_str());
 			m = recvPackets.erase(m);
-			log.appendf(AY_OBFUSCATE("\n"));
+			log.appendf(("\n"));
 		}
 		ImGui::EndChild();
 
 	}
 	ImGui::SameLine();
-	ImGui::Checkbox(AY_OBFUSCATE("##send"), &send);
+	ImGui::Checkbox(("##send"), &send);
 	ImGui::SameLine();
-	if (ImGui::Button(AY_OBFUSCATE("Print Send")))
+	if (ImGui::Button(("Print Send")))
 	{
 		char x[10];
 		_itoa((int)sentPackets.size(), x,10);
 		log.appendf(x);
-		log.appendf(AY_OBFUSCATE("\n"));
+		log.appendf(("\n"));
 		for (auto m : sentPackets) {
 			log.appendf(m.c_str());
-			log.appendf(AY_OBFUSCATE("\n"));
+			log.appendf(("\n"));
 		}
 	}
 	ImGui::SameLine();
-	ImGui::Checkbox(AY_OBFUSCATE("Auto-scroll"), &scroll);
+	ImGui::Checkbox(("Auto-scroll"), &scroll);
 	ImGui::EndGroup();
 
 	//ImGui::BeginGroup();
@@ -86,7 +85,7 @@ static void showRecvPackets(bool* p_open)
 //	ImGui::EndGroup();
 
 	ImGui::BeginGroup();
-	ImGui::BeginChild(AY_OBFUSCATE("Log"), ImVec2(570,660), false);
+	ImGui::BeginChild(("Log"), ImVec2(570,660), false);
 	if (recv) {
 		for (auto m = recvPackets.begin(); m != recvPackets.end();) {
 			/*if (ImGui::Selectable((*m).c_str(), (*m) == selectedPacket)) {
@@ -96,14 +95,14 @@ static void showRecvPackets(bool* p_open)
 
 			log.appendf((*m).c_str());
 			m = recvPackets.erase(m);
-			log.appendf(AY_OBFUSCATE("\n"));
+			log.appendf(("\n"));
 		}
 	}
 	if (send) {
 		for (auto m = sentPackets.begin(); m != sentPackets.end();) {
 			log.appendf((*m).c_str());
 			m = sentPackets.erase(m);
-			log.appendf(AY_OBFUSCATE("\n"));
+			log.appendf(("\n"));
 		}
 	}
 	// Single call to TextUnformatted() with a big buffer
@@ -129,15 +128,15 @@ __forceinline void draw_menu(bool* status, DWORD player)
 	float* player_pos = getpos();
 
 #ifdef MENU_BAR
-	ImGui::Begin(AY_OBFUSCATE("Pig Maple 2"), status, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::Begin(("Pig Maple 2"), status, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
 
 	if (ImGui::BeginMenuBar()) {
-		if (ImGui::BeginMenu(AY_OBFUSCATE("TBD"))
+		if (ImGui::BeginMenu(("TBD"))
 		{
-			if (ImGui::MenuItem(AY_OBFUSCATE("Save Teleports")) {
+			if (ImGui::MenuItem(("Save Teleports")) {
 
 			}
-			if (ImGui::MenuItem(AY_OBFUSCATE("Load Teleports")) {
+			if (ImGui::MenuItem(("Load Teleports")) {
 
 			}
 			ImGui::EndMenu();
@@ -193,7 +192,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 #ifdef OLD_TABS
 	if (switchTabs == 0)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.63f));
-	if (ImGui::Button(AY_OBFUSCATE("View"), ImVec2(width, 0.0f)))
+	if (ImGui::Button(("View"), ImVec2(width, 0.0f)))
 		switchTabs = 0;
 	else if (switchTabs == 0)
 		ImGui::PopStyleColor(1);
@@ -201,7 +200,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 	ImGui::SameLine(0.0, 2.0f);
 	if (switchTabs == 1)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.63f));
-	if (ImGui::Button(AY_OBFUSCATE("Char"), ImVec2(width, 0.0f)))
+	if (ImGui::Button(("Char"), ImVec2(width, 0.0f)))
 		switchTabs = 1;
 	else if (switchTabs == 1)
 		ImGui::PopStyleColor(1);
@@ -210,7 +209,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 	if (switchTabs == 2) {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.63f));
 	}
-	if (ImGui::Button(AY_OBFUSCATE("Tele"), ImVec2(width, 0.0f)))
+	if (ImGui::Button(("Tele"), ImVec2(width, 0.0f)))
 		switchTabs = 2;
 	else if (switchTabs == 2)
 		ImGui::PopStyleColor(1);
@@ -219,7 +218,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 	if (switchTabs == 3) {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.63f));
 	}
-	if (ImGui::Button(AY_OBFUSCATE("Macro"), ImVec2(width, 0.0f)))
+	if (ImGui::Button(("Macro"), ImVec2(width, 0.0f)))
 		switchTabs = 3;
 	else if (switchTabs == 3)
 		ImGui::PopStyleColor(1);
@@ -227,7 +226,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 	ImGui::SameLine(0.0, 2.0f);
 	if (switchTabs == 4)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.25f, 0.25f, 0.25f, 0.63f));
-	if (ImGui::Button(AY_OBFUSCATE("Dev"), ImVec2(width, 0.0f)))
+	if (ImGui::Button(("Dev"), ImVec2(width, 0.0f)))
 		switchTabs = 4;
 	else if (switchTabs == 4)
 		ImGui::PopStyleColor(1);
@@ -238,72 +237,72 @@ __forceinline void draw_menu(bool* status, DWORD player)
 
 	switch (switchTabs) {
 	case 0:
-		ImGui::Checkbox(AY_OBFUSCATE("Chest Glow"), &hack_config.chestChams);
-		ImGui::Checkbox(AY_OBFUSCATE("Portal Glow"), &hack_config.portalChams);
+		ImGui::Checkbox(("Chest Glow"), &hack_config.chestChams);
+		ImGui::Checkbox(("Portal Glow"), &hack_config.portalChams);
 		ImGui::SameLine();
 
-		ImGui::Checkbox(AY_OBFUSCATE("Null Render"), &hack_config.nullRenderCheck);
+		ImGui::Checkbox(("Null Render"), &hack_config.nullRenderCheck);
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(AY_OBFUSCATE("When checked, a hotkey on delete is active to reduce cpu usage"));
+			ImGui::SetTooltip(("When checked, a hotkey on delete is active to reduce cpu usage"));
 #ifdef DEV
-		ImGui::Checkbox(AY_OBFUSCATE("Debug Info"), &hack_config.debugMode);
-		ImGui::Checkbox(AY_OBFUSCATE("Spacebar"), &player_hacks.spacebarDown);
+		ImGui::Checkbox(("Debug Info"), &hack_config.debugMode);
+		ImGui::Checkbox(("Spacebar"), &player_hacks.spacebarDown);
 
 #endif
 		ImGui::Separator();
 		ImGui::Spacing();
-		//	ImGui::DragInt(AY_OBFUSCATE("drag zoom"), &hack_config.zoomCap, 100, 1100, 11000);
-		//	ImGui::SliderScalar(AY_OBFUSCATE("Zoom"), ImGuiDataType_S32, &hack_config.zoomCap, (const void*)1100, (const void*)11000);
-		ImGui::Text(AY_OBFUSCATE("Zoom Cap"));
+		//	ImGui::DragInt(("drag zoom"), &hack_config.zoomCap, 100, 1100, 11000);
+		//	ImGui::SliderScalar(("Zoom"), ImGuiDataType_S32, &hack_config.zoomCap, (const void*)1100, (const void*)11000);
+		ImGui::Text(("Zoom Cap"));
 		ImGui::SameLine(pad);
-		ImGui::SliderInt(AY_OBFUSCATE("##zoom"), &hack_config.zoomCap, 1100, 11000);
+		ImGui::SliderInt(("##zoom"), &hack_config.zoomCap, 1100, 11000);
 		ImGui::Spacing();
 		ImGui::Separator();
 
 #ifdef DEV
-		ImGui::Checkbox(AY_OBFUSCATE("Eye X"), &hack_config.eyeXCheck);
+		ImGui::Checkbox(("Eye X"), &hack_config.eyeXCheck);
 		ImGui::SameLine(pad);
-		ImGui::SliderFloat(AY_OBFUSCATE("##eyex"), &hack_config.eyeX, hack_config.eyeXPrev - 10000, hack_config.eyeXPrev + 10000);
-		ImGui::Checkbox(AY_OBFUSCATE("Eye Y"), &hack_config.eyeYCheck);
+		ImGui::SliderFloat(("##eyex"), &hack_config.eyeX, hack_config.eyeXPrev - 10000, hack_config.eyeXPrev + 10000);
+		ImGui::Checkbox(("Eye Y"), &hack_config.eyeYCheck);
 		ImGui::SameLine(pad);
-		ImGui::SliderFloat(AY_OBFUSCATE("##eyey"), &hack_config.eyeY, hack_config.eyeYPrev - 10000, hack_config.eyeYPrev + 10000);
+		ImGui::SliderFloat(("##eyey"), &hack_config.eyeY, hack_config.eyeYPrev - 10000, hack_config.eyeYPrev + 10000);
 #endif
-		ImGui::Checkbox(AY_OBFUSCATE("Yaw"), &hack_config.yawCheck);
+		ImGui::Checkbox(("Yaw"), &hack_config.yawCheck);
 		ImGui::SameLine(pad);
-		ImGui::SliderFloat(AY_OBFUSCATE("##yaw"), &hack_config.viewYaw, 0, 180);
-		ImGui::Checkbox(AY_OBFUSCATE("Pitch"), &hack_config.pitchCheck);
+		ImGui::SliderFloat(("##yaw"), &hack_config.viewYaw, 0, 180);
+		ImGui::Checkbox(("Pitch"), &hack_config.pitchCheck);
 		ImGui::SameLine(pad);
-		ImGui::SliderFloat(AY_OBFUSCATE("##pitch"), &hack_config.viewPitch, -90, 90);
-		ImGui::Checkbox(AY_OBFUSCATE("Roll"), &hack_config.rollCheck);
+		ImGui::SliderFloat(("##pitch"), &hack_config.viewPitch, -90, 90);
+		ImGui::Checkbox(("Roll"), &hack_config.rollCheck);
 		ImGui::SameLine(pad);
-		ImGui::SliderFloat(AY_OBFUSCATE("##roll"), &hack_config.viewRoll, 0, 180);
+		ImGui::SliderFloat(("##roll"), &hack_config.viewRoll, 0, 180);
 
 		break;
 	case 1:
 
-		ImGui::Checkbox(AY_OBFUSCATE("Delta"), &player_hacks.deltaToggle);
+		ImGui::Checkbox(("Delta"), &player_hacks.deltaToggle);
 		ImGui::SameLine(pad + 25);
-		ImGui::SliderInt("##deltaspeed", &player_hacks.deltaSpeed, 100, 200);
-		ImGui::Checkbox(AY_OBFUSCATE("Flight"), &player_hacks.flightSpeedToggle);
+		ImGui::SliderInt("##deltaspeed", &player_hacks.deltaSpeed, 100, 500);
+		ImGui::Checkbox(("Flight"), &player_hacks.flightSpeedToggle);
 		ImGui::SameLine(pad+25);
-		ImGui::SliderFloat(AY_OBFUSCATE("##flyingspeed"), &player_hacks.flyingSpeed, 0, 30);
-#ifdef BANABLE
-		ImGui::Checkbox(AY_OBFUSCATE("Move"), &player_hacks.moveToggle);
+		ImGui::SliderFloat(("##flyingspeed"), &player_hacks.flyingSpeed, 0, 30);
+
+		ImGui::Checkbox(("Move"), &player_hacks.moveToggle);
 		ImGui::SameLine(pad);
-		ImGui::SliderInt(AY_OBFUSCATE("##movespeed"), &player_hacks.moveSpeed, 50, 180);
-		ImGui::Checkbox(AY_OBFUSCATE("Mount"), &player_hacks.groundMountToggle);
+		ImGui::SliderInt(("##movespeed"), &player_hacks.moveSpeed, 50, 180);
+		ImGui::Checkbox(("Mount"), &player_hacks.groundMountToggle);
 		ImGui::SameLine(pad);
-		ImGui::SliderFloat(AY_OBFUSCATE("##mountspeed"), &player_hacks.groundMountSpeed, 0, 8);
+		ImGui::SliderFloat(("##mountspeed"), &player_hacks.groundMountSpeed, 0, 8);
 		ImGui::Separator();
-#endif
-		if (ImGui::Checkbox(AY_OBFUSCATE("Floor"), &player_hacks.floorAdjustToggle)) {
+
+		if (ImGui::Checkbox(("Floor"), &player_hacks.floorAdjustToggle)) {
 
 		}
 		else {
 			//zlock = getpos()[2];
 		}
 		ImGui::SameLine(pad + 25);
-		if (ImGui::DragFloat(AY_OBFUSCATE("##value"), &zlock, 0.005f))
+		if (ImGui::DragFloat(("##value"), &zlock, 0.005f))
 		{
 			player_hacks.newFloor = zlock;
 			float* pos = getpos();
@@ -315,53 +314,53 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		else if (player_hacks.floorAdjustToggle == false) {
 			zlock = getpos()[2];
 		}
-		if (ImGui::Checkbox(AY_OBFUSCATE("Offset Z"), &player_hacks.floorOffsetToggle)) {
+		if (ImGui::Checkbox(("Offset Z"), &player_hacks.floorOffsetToggle)) {
 			if (player_hacks.floorOffsetToggle == false)
 				resetFloorOffset();
 			//	else 
 			//		player_hacks.posBypass = true;
 		}
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(AY_OBFUSCATE("Use with location bypass"));
+			ImGui::SetTooltip(("Use with location bypass"));
 
 		ImGui::SameLine(pad + 25);
-		ImGui::SliderInt(AY_OBFUSCATE("##flooroffset"), &player_hacks.floorOffset, -5, 7);
-		ImGui::Checkbox(AY_OBFUSCATE("Turbo Rise"), &player_hacks.turboRise);
+		ImGui::SliderInt(("##flooroffset"), &player_hacks.floorOffset, -5, 7);
+		ImGui::Checkbox(("Turbo Rise"), &player_hacks.turboRise);
 		ImGui::Separator();
 		ImGui::Spacing();
-		if (ImGui::Checkbox(AY_OBFUSCATE("No Fall"), &player_hacks.noFall)) {
+		if (ImGui::Checkbox(("No Fall"), &player_hacks.noFall)) {
 			player_hacks.prevZ = player_pos[2];
 			noFallClipLoc = false;
 		}
 		ImGui::SameLine(150);
-		if (ImGui::Checkbox(AY_OBFUSCATE("No Fall+Clip+Bypass"), &noFallClipLoc)) {
+		if (ImGui::Checkbox(("No Fall+Clip+Bypass"), &noFallClipLoc)) {
 			player_hacks.noFall = noFallClipLoc;
 			player_hacks.noClip = noFallClipLoc;
 			player_hacks.posBypass = noFallClipLoc;
 		}
-		if (ImGui::Checkbox(AY_OBFUSCATE("No Clip"), &player_hacks.noClip))
+		if (ImGui::Checkbox(("No Clip"), &player_hacks.noClip))
 			noFallClipLoc = false;
-		if (ImGui::Checkbox(AY_OBFUSCATE("Location Bypass"), &player_hacks.posBypass))
+		if (ImGui::Checkbox(("Location Bypass"), &player_hacks.posBypass))
 			noFallClipLoc = false;
 
 		ImGui::Separator();
-		ImGui::Checkbox(AY_OBFUSCATE("Partial No-Clip"), &player_hacks.semiNoClip);
-		ImGui::Checkbox(AY_OBFUSCATE("Mount No-Clip"), &player_hacks.fMountNoClip);
+		ImGui::Checkbox(("Partial No-Clip"), &player_hacks.semiNoClip);
+		ImGui::Checkbox(("Mount No-Clip"), &player_hacks.fMountNoClip);
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(AY_OBFUSCATE("Full no-clip active while riding flying mount, normal clip when unmounted"));
+			ImGui::SetTooltip(("Full no-clip active while riding flying mount, normal clip when unmounted"));
 
-		if (!ImGui::Checkbox(AY_OBFUSCATE("Wall Jump"), &player_hacks.wallWalkToggle)) {
+		if (!ImGui::Checkbox(("Wall Jump"), &player_hacks.wallWalkToggle)) {
 			resetWallStep();
 		}
 		break;
 	case 2:
 	{
-		ImGui::InputFloat(AY_OBFUSCATE("X"), &x_);
-		ImGui::InputFloat(AY_OBFUSCATE("Y"), &y_);
-		ImGui::InputFloat(AY_OBFUSCATE("Z"), &z_);
+		ImGui::InputFloat(("X"), &x_);
+		ImGui::InputFloat(("Y"), &y_);
+		ImGui::InputFloat(("Z"), &z_);
 		int count = 0;
-		string del(AY_OBFUSCATE(","));
-		if (ImGui::Button(AY_OBFUSCATE("Copy player cords")))
+		string del((","));
+		if (ImGui::Button(("Copy player cords")))
 		{
 			float* pos = getpos();
 			x_ = pos[0];
@@ -370,7 +369,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 			pos = NULL;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button(AY_OBFUSCATE("-"))) {
+		if (ImGui::Button(("-"))) {
 			count = 0;
 			for (auto x = teleTargets.begin(); x != teleTargets.end(); ) {
 				if (count == currselect)
@@ -384,7 +383,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		}
 		ImGui::SameLine();
 
-		if (ImGui::Button(AY_OBFUSCATE("+"))) {
+		if (ImGui::Button(("+"))) {
 			count = 0;
 			bool valid = true;
 			std::string s(std::to_string(x_).c_str() + del + std::to_string(y_).c_str() + del + std::to_string(z_).c_str());
@@ -407,7 +406,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 
 
 
-		if (ImGui::Button(AY_OBFUSCATE("Teleport"))) {
+		if (ImGui::Button(("Teleport"))) {
 			if (currselect > teleTargets.size() || teleTargets.size() == 0)
 				break;
 
@@ -415,7 +414,7 @@ __forceinline void draw_menu(bool* status, DWORD player)
 
 			float cords[3];
 			const char* s_ = s.c_str();
-			//printf(AY_OBFUSCATE("Splitting string \"%s\" into tokens:\n"), s);
+			//printf(("Splitting string \"%s\" into tokens:\n"), s);
 			int c = 0;
 			cords[c] = std::stof(strtok((char*)s_, "),"));
 			while (cords != NULL && c < 2)
@@ -436,68 +435,69 @@ __forceinline void draw_menu(bool* status, DWORD player)
 	case(3): {
 		char cb[6] = { hack_config.keycode };
 		ImGui::PushItemWidth(50);
-		ImGui::InputText(AY_OBFUSCATE("Key"), cb, sizeof(cb), ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText(("Key"), cb, sizeof(cb), ImGuiInputTextFlags_ReadOnly);
 		ImGui::PushItemWidth(50);
-		if (ImGui::InputText(AY_OBFUSCATE("Key Code (HEX)"), buf, 3, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank, NULL, NULL)) {
+		if (ImGui::InputText(("Key Code (HEX)"), buf, 3, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank, NULL, NULL)) {
 			hack_config.keycode = (int)strtol(buf, NULL, 16);
 		}
-		if (ImGui::Checkbox(AY_OBFUSCATE("Hold Key"), &hack_config.holdKey)) {
+		if (ImGui::Checkbox(("Hold Key"), &hack_config.holdKey)) {
 			key_press(hack_config.keycode);
 		}
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(AY_OBFUSCATE("Global Hotkey: F1"));
+			ImGui::SetTooltip(("Global Hotkey: F1"));
 		ImGui::SameLine();
-		if (ImGui::Button(AY_OBFUSCATE("Key Down"))) {
+		if (ImGui::Button(("Key Down"))) {
 			key_press(hack_config.keycode);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button(AY_OBFUSCATE("Key Up"))) {
+		if (ImGui::Button(("Key Up"))) {
 			key_press(hack_config.keycode, true);
 		}
-		ImGui::Checkbox(AY_OBFUSCATE("Background Input"), &hack_config.wndProcHooks);
+		ImGui::Checkbox(("Background Input"), &hack_config.wndProcHooks);
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(AY_OBFUSCATE("Stops the Maplestory window from losing focus, meaning ALL input will be sent to maple as well as the active window"));
+			ImGui::SetTooltip(("Stops the Maplestory window from losing focus, meaning ALL input will be sent to maple as well as the active window"));
 		break;
 	}
 #ifdef DEV
 	case(4):
-		ImGui::BeginChild(AY_OBFUSCATE("renderstates"), ImVec2(500, 440));
-		ImGui::Checkbox(AY_OBFUSCATE("Log States"), &hack_config.setRenderLog);
+		ImGui::BeginChild(("renderstates"), ImVec2(500, 440));
+		ImGui::Checkbox(("Log States"), &hack_config.setRenderLog);
 		ImGui::SameLine();
-		ImGui::Checkbox(AY_OBFUSCATE("noFog"), &hack_config.noFog);
+		ImGui::Checkbox(("noFog"), &hack_config.noFog);
 		ImGui::SameLine();
-		ImGui::Checkbox(AY_OBFUSCATE("Log Red Prims"), &hack_config.setPrimLog);
+		ImGui::Checkbox(("Log Red Prims"), &hack_config.setPrimLog);
 		ImGui::SameLine();
-		ImGui::Checkbox(AY_OBFUSCATE("Player Chams"), &hack_config.playerChams);
+		ImGui::Checkbox(("Player Chams"), &hack_config.playerChams);
 		ImGui::SameLine();
-		if (ImGui::Button(AY_OBFUSCATE("Clear"))) {
+		if (ImGui::Button(("Clear"))) {
 			renders.clear();
 		}
 		char cb_[6] = { hack_config.keycode };
 		//	char ck = keycode;
 		ImGui::PushItemWidth(50);
-		ImGui::InputText(AY_OBFUSCATE("Key"), cb_, sizeof(cb_), ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText(("Key"), cb_, sizeof(cb_), ImGuiInputTextFlags_ReadOnly);
 		ImGui::PushItemWidth(50);
-		if (ImGui::InputText(AY_OBFUSCATE("Key Code (HEX)"), buf, 3, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank, NULL, NULL)) {
+		if (ImGui::InputText(("Key Code (HEX)"), buf, 3, ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank, NULL, NULL)) {
 			hack_config.keycode = (int)strtol(buf, NULL, 16);
 		}
-		if (ImGui::Checkbox(AY_OBFUSCATE("Hold Key"), &hack_config.holdKey)) {
+		if (ImGui::Checkbox(("Hold Key"), &hack_config.holdKey)) {
 			key_press(hack_config.keycode);
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button(AY_OBFUSCATE("Key Down"))) {
+		if (ImGui::Button(("Key Down"))) {
 			key_press(hack_config.keycode);
 		}
 		ImGui::SameLine();
-		if (ImGui::Button(AY_OBFUSCATE("Key Up"))) {
+		if (ImGui::Button(("Key Up"))) {
 			key_press(hack_config.keycode, true);
 		}
-		ImGui::SameLine();
-		if (ImGui::Button(AY_OBFUSCATE("Write packet hook"))) {
+		/*ImGui::SameLine();
+		if (ImGui::Button(("Write packet hook"))) {
 			write_packet_hooks();
-		}
-		if (ImGui::Button(AY_OBFUSCATE("Received Packets")))
+		}*/
+		ImGui::Separator();
+		if (ImGui::Button(("Open Packet Log")))
 			packetWindow = !packetWindow;
 		for (auto r = renders.begin(); r != renders.end(); ++r) {
 			char label[128];
@@ -508,22 +508,16 @@ __forceinline void draw_menu(bool* status, DWORD player)
 		break;
 #endif
 	}
-#ifdef DEV
+
 	if (packetWindow)
 		showRecvPackets(&packetWindow);
-#endif
+
 	
-#ifdef DEV
+
 	ImGui::Separator();
 	char t[] = { sa[11], sa[0], sa[15], sa[8], sa[6] ,'\0'};
 	ImGui::TextColored(ImVec4(0.95f, .36f, .03f, 0.95f), t);
-#else
-	ImGui::Separator();
-	char t[] = { sa[31],  sa[8],  sa[6],' ', sa[30], ' ',sa[6],  sa[0],  sa[12],  sa[4],  sa[10], sa[8],  sa[11],  sa[11],  sa[4],  sa[17],  sa[26],  sa[13],  sa[4],  sa[19] ,'\0'};
-	ImVec2 txt = ImGui::CalcTextSize(t);
-	ImGui::SetCursorPosX(ImGui::GetContentRegionAvailWidth() * 0.20f);
-	ImGui::TextColored(ImVec4(0.95f, .36f, .03f, 0.95f), t);
-#endif
+
 	ImGui::PopAllowKeyboardFocus();
 	ImGui::End();
 	player_pos = NULL;
